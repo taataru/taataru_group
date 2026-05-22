@@ -767,6 +767,7 @@ function renderStickyNotes() {
         container.appendChild(noteEl);
     });
     updateCanvasEmptyState();
+    updateCanvasBounds();
 }
 
 function onStickyDragStart(e, noteId) {
@@ -1063,6 +1064,64 @@ function updateCanvasEmptyState() {
     }
 }
 
+// Dynamically expand the canvas/SVG layer so nodes and connecting lines never get clipped on the right/bottom
+const CANVAS_MIN_SIZE = 3000;
+const CANVAS_PADDING = 400;
+const NODE_W_ESTIMATE = 270;
+const NODE_H_ESTIMATE = 360;
+const STICKY_W_ESTIMATE = 170;
+const STICKY_H_ESTIMATE = 120;
+
+function updateCanvasBounds() {
+    let maxX = CANVAS_MIN_SIZE - CANVAS_PADDING;
+    let maxY = CANVAS_MIN_SIZE - CANVAS_PADDING;
+
+    state.nodes.forEach(n => {
+        const el = document.getElementById(`node-dom-${n.id}`);
+        const w = el ? el.offsetWidth : NODE_W_ESTIMATE;
+        const h = el ? el.offsetHeight : NODE_H_ESTIMATE;
+        if (n.x + w > maxX) maxX = n.x + w;
+        if (n.y + h > maxY) maxY = n.y + h;
+    });
+
+    state.stickyNotes.forEach(s => {
+        const el = document.getElementById(`sticky-${s.id}`);
+        const w = el ? el.offsetWidth : STICKY_W_ESTIMATE;
+        const h = el ? el.offsetHeight : STICKY_H_ESTIMATE;
+        if (s.x + w > maxX) maxX = s.x + w;
+        if (s.y + h > maxY) maxY = s.y + h;
+    });
+
+    (state.doodles || []).forEach(d => {
+        (d.points || []).forEach(p => {
+            if (p.x > maxX) maxX = p.x;
+            if (p.y > maxY) maxY = p.y;
+        });
+    });
+
+    const width = Math.max(CANVAS_MIN_SIZE, Math.ceil(maxX + CANVAS_PADDING));
+    const height = Math.max(CANVAS_MIN_SIZE, Math.ceil(maxY + CANVAS_PADDING));
+
+    const svg = document.getElementById('svg-layer');
+    const nodesCt = document.getElementById('nodes-container');
+    const stickyCt = document.getElementById('sticky-notes-container');
+
+    if (svg) {
+        svg.setAttribute('width', width);
+        svg.setAttribute('height', height);
+        svg.style.width = `${width}px`;
+        svg.style.height = `${height}px`;
+    }
+    if (nodesCt) {
+        nodesCt.style.width = `${width}px`;
+        nodesCt.style.height = `${height}px`;
+    }
+    if (stickyCt) {
+        stickyCt.style.width = `${width}px`;
+        stickyCt.style.height = `${height}px`;
+    }
+}
+
 function renderNodes() {
     const container = document.getElementById('nodes-container');
     container.innerHTML = '';
@@ -1193,6 +1252,8 @@ function renderNodes() {
 
         container.appendChild(nodeEl);
     });
+
+    updateCanvasBounds();
 }
 
 function escapeHtml(str) {
@@ -1295,6 +1356,7 @@ function onGlobalMove(e) {
 
             const el = document.getElementById(`sticky-${note.id}`);
             if (el) el.style.transform = `translate3d(${note.x}px, ${note.y}px, 0)`;
+            updateCanvasBounds();
         }
         return;
     }
@@ -1333,6 +1395,8 @@ function updateDragAndLines() {
             }
             // Super fast partial updates only on lines that belong to this node
             updateActiveEdges(node.id);
+            // Expand the canvas/SVG so far-right drags don't clip lines/nodes
+            updateCanvasBounds();
         }
     }
 
@@ -1450,6 +1514,8 @@ function drawEdges() {
         edgesGroup.appendChild(path);
         edgesGroup.appendChild(hoverPath);
     });
+
+    updateCanvasBounds();
 }
 
 // Fast partial update targeting only the lines affected by the currently dragged node
@@ -2099,15 +2165,15 @@ function renderGanttChart() {
                 <td class="p-3 text-center border-r border-slate-200 font-mono text-[11px] text-slate-700">${formatDisplayDate(nodeFinishDate)}</td>
                 <td class="p-3 text-center border-r border-slate-200">${statusBadge}</td>
                 <td class="p-3 text-center border-r border-slate-200 font-bold text-indigo-600">${node.float}日</td>
-                <td class="p-3 overflow-hidden">
-                    <div class="flex relative h-6 w-full items-center">
+                <td class="p-3">
+                    <div class="relative h-6 items-center" style="width: ${totalCols * dayWidth}px;">
                         <div class="absolute inset-0 flex pointer-events-none">
                             ${Array.from({ length: totalCols }).map((_, i) => {
                                 const date = getDateForOffset(i);
                                 return `<div class="h-full border-r shrink-0 ${getDayGridClass(date)}" style="width: ${dayWidth}px;"></div>`;
                             }).join('')}
                         </div>
-                        <div class="absolute h-5 rounded-md ${barColor} flex items-center justify-between px-2 text-[9px] font-bold text-white shadow-sm"
+                        <div class="absolute top-1/2 -translate-y-1/2 h-5 rounded-md ${barColor} flex items-center justify-between px-2 text-[9px] font-bold text-white shadow-sm"
                              style="left: ${barStartOffset}px; width: ${barWidth}px;"
                              title="${node.name} (${formatDisplayDate(nodeStartDate)}〜${formatDisplayDate(nodeFinishDate)})">
                              <span class="truncate">${node.duration > 1 ? node.name : ''}</span>
