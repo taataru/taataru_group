@@ -1,0 +1,508 @@
+﻿<!DOCTYPE html>
+<html lang="ja" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowWBS - 完全無料のAI WBS & ガントチャートジェネレーター</title>
+    <meta name="description" content="FlowWBSは、ChatGPTなどで作ったJSONからWBS、アローダイアグラム、ガントチャートを無料で作成できるブラウザ完結型のプロジェクト管理ツールです。">
+    <meta name="keywords" content="WBS 無料, ガントチャート 作成, アローダイアグラム, ChatGPT プロジェクト管理, 工程表, 個人開発">
+    <meta name="author" content="たあたる">
+    <link rel="canonical" href="https://example.com/">
+    <meta property="og:title" content="FlowWBS - 無料のAI WBS & ガントチャート作成ツール">
+    <meta property="og:description" content="ChatGPTのJSONからWBS・アロー図・ガントチャートをすばやく可視化。ブラウザだけで保存・共有・画像出力まで。">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://example.com/">
+    <meta property="og:image" content="https://example.com/assets/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="FlowWBS">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="FlowWBS - 無料のAI WBS & ガントチャート作成ツール">
+    <meta name="twitter:description" content="ChatGPTのJSONからWBS・アロー図・ガントチャートをすばやく可視化。">
+    <meta name="twitter:image" content="https://example.com/assets/og-image.png">
+    <meta name="twitter:creator" content="@taataru_group">
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="assets/favicon.svg">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "FlowWBS",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "description": "無料でWBS、アローダイアグラム、ガントチャートを作成できるブラウザ完結型ツール。",
+      "author": {
+        "@type": "Person",
+        "name": "たあたる",
+        "url": "https://x.com/taataru_group"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "JPY"
+      }
+    }
+    </script>
+    <!-- Tailwind CSS for rich modern UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <!-- FontAwesome for beautiful SaaS-style icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="h-full overflow-hidden text-slate-800 flex flex-col bg-slate-50">
+
+<!-- Main App Header -->
+<header class="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-6 z-30 shrink-0 select-none">
+    <div class="flex items-center space-x-3">
+        <!-- Sidebar Toggle for Mobile/Tablet -->
+        <button onclick="toggleSidebar()" class="md:hidden text-slate-500 hover:text-slate-800 text-lg p-2 rounded-lg hover:bg-slate-100 transition focus:outline-none">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-emerald-500 flex items-center justify-center shadow-md shadow-indigo-500/10 shrink-0">
+            <i class="fa-solid fa-diagram-project text-white text-sm"></i>
+        </div>
+        <div class="block">
+            <span class="font-bold text-base md:text-lg tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">FlowWBS</span>
+            <span class="text-[9px] md:text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-semibold ml-1.5 border border-emerald-200">完全無料版</span>
+        </div>
+    </div>
+
+    <!-- Right Header Utilities -->
+    <div class="flex items-center space-x-2 md:space-x-3">
+        <!-- Tab Switches -->
+        <div class="bg-slate-100 p-1 rounded-lg border border-slate-200 flex space-x-1">
+            <button id="tab-canvas" onclick="switchView('canvas')" class="px-2.5 py-1 text-[11px] md:text-xs font-semibold rounded-md transition bg-white text-indigo-600 shadow-sm border border-slate-200/50">
+                <i class="fa-solid fa-network-wired mr-1 md:mr-1.5"></i>アロー
+            </button>
+            <button id="tab-wbs" onclick="switchView('wbs')" class="px-2.5 py-1 text-[11px] md:text-xs font-semibold rounded-md transition text-slate-500 hover:text-slate-800">
+                <i class="fa-solid fa-list-check mr-1 md:mr-1.5"></i>WBS
+            </button>
+            <button id="tab-gantt" onclick="switchView('gantt')" class="px-2.5 py-1 text-[11px] md:text-xs font-semibold rounded-md transition text-slate-500 hover:text-slate-800">
+                <i class="fa-solid fa-chart-gantt mr-1 md:mr-1.5"></i>ガント
+            </button>
+        </div>
+
+        <!-- Share & Viral Support -->
+        <button onclick="openModal('settings-modal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 transition">
+            <i class="fa-solid fa-gear"></i> <span class="hidden md:inline">設定</span>
+        </button>
+
+        <button onclick="shareOnX()" class="bg-black hover:bg-slate-900 text-white font-bold text-xs px-2.5 py-1.5 rounded-lg flex items-center shadow-md transition duration-200">
+            <i class="fa-brands fa-x-twitter md:mr-1.5"></i> <span class="hidden md:inline">Xでシェアする</span>
+        </button>
+        
+        <button onclick="openModal('share-modal')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 transition">
+            <i class="fa-solid fa-share-nodes"></i> <span class="hidden md:inline">共有・保存</span>
+        </button>
+    </div>
+</header>
+
+<!-- Main Layout Body -->
+<div class="flex flex-1 overflow-hidden relative w-full">
+
+    <!-- Mobile Overlay -->
+    <div id="sidebar-overlay" onclick="toggleSidebar(false)" class="fixed inset-0 bg-slate-900/40 z-30 transition-opacity duration-300 opacity-0 pointer-events-none md:hidden"></div>
+
+    <!-- Left Sidebar: AI Prompt & Control Area -->
+    <aside id="app-sidebar" class="fixed md:relative top-0 left-0 h-full w-80 bg-white border-r border-slate-200 flex flex-col shrink-0 z-40 overflow-y-auto transform -translate-x-full md:translate-x-0 transition-transform duration-300">
+        <!-- Close button inside mobile sidebar -->
+        <div class="flex md:hidden items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
+            <span class="font-bold text-slate-700 text-sm">設定・ツールメニュー</span>
+            <button onclick="toggleSidebar(false)" class="text-slate-400 hover:text-slate-600 p-1">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <!-- Mascot Advice Widget - "Plakuma Tips" -->
+        <div class="p-4 border-b border-slate-200 bg-gradient-to-b from-indigo-50/30 to-white">
+            <div class="flex items-start space-x-3">
+                <!-- Plakuma Avatar SVG (Cute Polar bear with hardhat) -->
+                <div class="w-12 h-12 shrink-0 bg-white rounded-full border border-slate-100 shadow-sm flex items-center justify-center overflow-hidden relative">
+                    <svg class="w-10 h-10 mt-1" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Ears -->
+                        <circle cx="28" cy="28" r="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="3"/>
+                        <circle cx="28" cy="28" r="5" fill="#F1F5F9"/>
+                        <circle cx="72" cy="28" r="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="3"/>
+                        <circle cx="72" cy="28" r="5" fill="#F1F5F9"/>
+                        <!-- Head -->
+                        <circle cx="50" cy="55" r="32" fill="#FFFFFF" stroke="#94A3B8" stroke-width="3"/>
+                        <!-- Cheek blush -->
+                        <ellipse cx="30" cy="62" rx="6" ry="4" fill="#FECDD3" opacity="0.8"/>
+                        <ellipse cx="70" cy="62" rx="6" ry="4" fill="#FECDD3" opacity="0.8"/>
+                        <!-- Eyes -->
+                        <circle cx="38" cy="52" r="3.5" fill="#1E293B"/>
+                        <circle cx="62" cy="52" r="3.5" fill="#1E293B"/>
+                        <!-- Highlights inside eyes -->
+                        <circle cx="39.5" cy="50.5" r="1" fill="#FFFFFF"/>
+                        <circle cx="63.5" cy="50.5" r="1" fill="#FFFFFF"/>
+                        <!-- Muzzle -->
+                        <ellipse cx="50" cy="61" rx="10" ry="7" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5"/>
+                        <!-- Nose -->
+                        <path d="M46 59C46 57.5 47.5 56 50 56C52.5 56 54 57.5 54 59C54 60.5 52.5 61 50 61C47.5 61 46 60.5 46 59Z" fill="#1E293B"/>
+                        <!-- Mouth -->
+                        <path d="M47 64C48.5 65.5 50 65.5 50 65.5M50 65.5C50 65.5 51.5 65.5 53 64" stroke="#1E293B" stroke-width="2" stroke-linecap="round"/>
+                        <!-- Cute Hardhat (Construction Helmet) representing planner -->
+                        <path d="M22 36C22 24 32 18 50 18C68 18 78 24 78 36H22Z" fill="#FBBF24" stroke="#D97706" stroke-width="2.5"/>
+                        <path d="M46 18C46 12 48 10 50 10C52 10 54 12 54 18H46Z" fill="#FBBF24" stroke="#D97706" stroke-width="2.5"/>
+                        <rect x="47" y="24" width="6" height="12" fill="#D97706" rx="1"/>
+                    </svg>
+                </div>
+                <!-- Balloon style container for Plakuma tips -->
+                <div class="flex-1 bg-white border border-indigo-100 rounded-xl p-3 shadow-sm relative">
+                    <div class="absolute top-4 -left-2 w-3.5 h-3.5 bg-white border-l border-b border-indigo-100 rotate-45"></div>
+                    <span class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider block mb-1">ぷらクマの助言:</span>
+                    <p id="plakuma-speech" class="text-xs text-slate-600 font-medium leading-relaxed">
+                        こんにちは！プランナーの『ぷらクマ』だよ！タスクをダブルクリックするか、AIデータを貼って予定を作ろう！
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI & Import Section -->
+        <div class="p-4 border-b border-slate-200">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    <i class="fa-solid fa-wand-magic-sparkles text-indigo-500 mr-1.5"></i>AI JSON 連携
+                </span>
+                <span class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full font-bold">完全無料・制限なし</span>
+            </div>
+            <p class="text-xs text-slate-500 mb-3">ChatGPT等に出力させたJSONを貼り付けてください。テンプレート変更は上部の設定から行えます。</p>
+
+            <!-- JSON Text Area -->
+            <textarea id="ai-json-input" class="w-full h-36 bg-slate-50 border border-slate-200 rounded-lg p-2 font-mono text-[10px] text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none mb-3" placeholder='JSONデータをここに貼り付け...'></textarea>
+            
+            <!-- Generate/Import Button -->
+            <button onclick="importJSON(); toggleSidebar(false);" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow-md shadow-indigo-600/10 transition flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-circle-play"></i>
+                <span>WBS & ダイアグラムを自動構築</span>
+            </button>
+        </div>
+
+        <!-- Local File Save/Load -->
+        <div class="p-4 border-b border-slate-200 bg-slate-50/50">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">
+                <i class="fa-solid fa-floppy-disk text-emerald-600 mr-1.5"></i>ローカル保存と再開
+            </span>
+            <p class="text-[11px] text-slate-500 mb-3">
+                完全無料！いつでもブラウザで復元できるファイルとしてお手元にスケジュールデータを保存できます。貼った写真も一緒に保存されます！
+            </p>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="exportJSONFile(); toggleSidebar(false);" class="bg-white hover:bg-slate-50 text-slate-700 text-xs py-2 px-2 rounded-md border border-slate-300 transition flex items-center justify-center space-x-1 shadow-sm">
+                    <i class="fa-solid fa-download text-slate-500"></i>
+                    <span>ファイルに保存</span>
+                </button>
+                <button onclick="triggerFileInput(); toggleSidebar(false);" class="bg-white hover:bg-slate-50 text-slate-700 text-xs py-2 px-2 rounded-md border border-slate-300 transition flex items-center justify-center space-x-1 shadow-sm">
+                    <i class="fa-solid fa-upload text-slate-500"></i>
+                    <span>ファイルを読込</span>
+                </button>
+            </div>
+            <!-- Hidden File Input -->
+            <input type="file" id="file-loader-input" accept=".json" class="hidden" onchange="loadJSONFile(event)">
+        </div>
+
+        <!-- Copy Prompt Section -->
+        <div class="p-4 border-b border-slate-200">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">
+                <i class="fa-solid fa-copy text-pink-500 mr-1.5"></i>AI専用の指示書(プロンプト)
+            </span>
+            <button onclick="copyPromptToClipboard(); toggleSidebar(false);" class="w-full bg-white hover:bg-slate-50 text-slate-700 text-xs py-2 px-3 rounded-md border border-slate-300 transition flex items-center justify-center space-x-1.5 shadow-sm">
+                <i class="fa-regular fa-copy text-slate-500"></i>
+                <span>プロンプトをコピーする</span>
+            </button>
+        </div>
+
+        <!-- Status & Stats Panel -->
+        <div class="p-4 border-b border-slate-200">
+            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-3">
+                <i class="fa-solid fa-chart-line text-cyan-600 mr-1.5"></i>プロジェクト解析状況
+            </span>
+            <div class="space-y-2 text-xs">
+                <div class="flex justify-between py-1 border-b border-slate-100">
+                    <span class="text-slate-500">総タスク数:</span>
+                    <span id="stat-total-nodes" class="font-bold text-slate-800">0</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-slate-100">
+                    <span class="text-slate-500">総工期:</span>
+                    <span id="stat-total-duration" class="font-bold text-indigo-600">0日間</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Creator Support Panel -->
+        <div class="p-4 text-xs mt-auto bg-slate-50 border-t border-slate-200">
+            <h4 class="font-bold text-indigo-600 mb-1.5"><i class="fa-regular fa-comments mr-1.5 animate-bounce"></i>Made by たあたる</h4>
+            <p class="text-slate-500 leading-relaxed mb-2">
+                FlowWBSは完全無料で公開中です。気に入ったらXで <span class="font-semibold text-slate-700">@taataru_group</span> をフォロー＆シェアしてもらえると嬉しいです。
+            </p>
+            <div class="grid grid-cols-2 gap-2">
+                <a href="https://x.com/taataru_group" target="_blank" rel="noopener" class="bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 text-xs py-2 rounded font-semibold transition flex items-center justify-center shadow-sm">
+                    <i class="fa-brands fa-x-twitter mr-1.5"></i> Xを見る
+                </a>
+                <button onclick="shareOnX()" class="bg-white hover:bg-slate-100 text-indigo-600 border border-indigo-200 text-xs py-2 rounded font-semibold transition flex items-center justify-center shadow-sm">
+                    <i class="fa-solid fa-share-nodes mr-1.5 text-indigo-500"></i> シェア
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Center/Right Canvas Area -->
+    <main id="main-workspace" class="flex-1 flex flex-col overflow-hidden relative h-full">
+        <!-- Canvas Toolbar Controls -->
+        <div class="bg-white border-b border-slate-200 flex flex-wrap items-center justify-between p-2 md:p-3 z-10 select-none shrink-0 gap-2">
+            <div class="flex items-center space-x-2">
+                <!-- Add Task -->
+                <button onclick="addNewNodeAtCenter()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3 py-2 rounded-md shadow-sm transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>新規タスク追加</span>
+                </button>
+                <!-- Doodle -->
+                <button id="tool-doodle" onclick="toggleDoodleMode()" class="bg-white hover:bg-slate-50 text-slate-700 text-xs px-3 py-2 rounded-md border border-slate-200 transition flex items-center space-x-1.5 shadow-sm" title="キャンバスにフリーハンドで線を描きます">
+                    <i class="fa-solid fa-pencil text-rose-500"></i>
+                    <span>落書き</span>
+                </button>
+                <!-- Eraser -->
+                <button id="tool-eraser" onclick="toggleEraserMode()" class="bg-white hover:bg-slate-50 text-slate-700 text-xs px-3 py-2 rounded-md border border-slate-200 transition flex items-center space-x-1.5 shadow-sm" title="落書きや付箋をクリックして消します">
+                    <i class="fa-solid fa-eraser text-slate-500"></i>
+                    <span>消しゴム</span>
+                </button>
+                <!-- Sticky Note -->
+                <button onclick="addStickyNoteAtCenter()" class="bg-white hover:bg-amber-50 text-slate-700 text-xs px-3 py-2 rounded-md border border-slate-200 transition flex items-center space-x-1.5 shadow-sm" title="補足用の付箋を追加します">
+                    <i class="fa-solid fa-note-sticky text-amber-500"></i>
+                    <span>付箋</span>
+                </button>
+                <!-- Auto Layout -->
+                <button onclick="autoLayoutNodes()" class="bg-white hover:bg-slate-50 text-slate-700 text-xs px-3 py-2 rounded-md border border-slate-200 transition flex items-center space-x-1.5 shadow-sm" title="タスクの依存度順に綺麗に整列します">
+                    <i class="fa-solid fa-arrows-spin text-slate-500"></i>
+                    <span>自動整列</span>
+                </button>
+                <!-- Clear All -->
+                <button onclick="clearAllCanvas()" class="bg-white hover:bg-slate-50 text-rose-500 text-xs px-3 py-2 rounded-md border border-slate-200 transition flex items-center space-x-1.5 shadow-sm">
+                    <i class="fa-solid fa-trash-can text-rose-400"></i>
+                    <span class="hidden sm:inline">全消去</span>
+                </button>
+            </div>
+
+            <div class="flex items-center space-x-3 text-[11px] md:text-xs text-slate-500">
+                <span class="flex items-center">
+                    <i class="fa-solid fa-lock text-[10px] text-amber-500 mr-1.5"></i>鍵=日程の個別固定
+                </span>
+                <span class="flex items-center">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-indigo-500 mr-1"></span>
+                    通常タスク
+                </span>
+            </div>
+        </div>
+
+        <!-- Dynamic Container Switch -->
+        <div class="flex-1 relative overflow-hidden">
+            <!-- VIEW A: Interactive Arrow Diagram Canvas -->
+            <div id="canvas-container" class="absolute inset-0 canvas-grid overflow-auto flex items-stretch" style="-webkit-overflow-scrolling: touch;">
+                <!-- Empty State Friendly Illustration of Plakuma Bear -->
+                <div id="canvas-empty-state" class="absolute inset-0 flex flex-col items-center justify-center p-6 z-0 select-none pointer-events-none transition-opacity duration-300">
+                    <div class="w-36 h-36 mb-4 flex items-center justify-center bg-white rounded-full border border-slate-200/60 shadow-lg relative">
+                        <svg class="w-28 h-28 mt-2" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Ears -->
+                            <circle cx="28" cy="28" r="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="3"/>
+                            <circle cx="28" cy="28" r="5" fill="#F1F5F9"/>
+                            <circle cx="72" cy="28" r="10" fill="#E2E8F0" stroke="#94A3B8" stroke-width="3"/>
+                            <circle cx="72" cy="28" r="5" fill="#F1F5F9"/>
+                            <!-- Head -->
+                            <circle cx="50" cy="55" r="32" fill="#FFFFFF" stroke="#94A3B8" stroke-width="3"/>
+                            <!-- Cheek blush -->
+                            <ellipse cx="30" cy="62" rx="6" ry="4" fill="#FECDD3" opacity="0.8"/>
+                            <ellipse cx="70" cy="62" rx="6" ry="4" fill="#FECDD3" opacity="0.8"/>
+                            <!-- Eyes -->
+                            <circle cx="38" cy="52" r="3.5" fill="#1E293B"/>
+                            <circle cx="62" cy="52" r="3.5" fill="#1E293B"/>
+                            <!-- Highlights inside eyes -->
+                            <circle cx="39.5" cy="50.5" r="1" fill="#FFFFFF"/>
+                            <circle cx="63.5" cy="50.5" r="1" fill="#FFFFFF"/>
+                            <!-- Muzzle -->
+                            <ellipse cx="50" cy="61" rx="10" ry="7" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5"/>
+                            <!-- Nose -->
+                            <path d="M46 59C46 57.5 47.5 56 50 56C52.5 56 54 57.5 54 59C54 60.5 52.5 61 50 61C47.5 61 46 60.5 46 59Z" fill="#1E293B"/>
+                            <!-- Mouth -->
+                            <path d="M47 64C48.5 65.5 50 65.5 50 65.5M50 65.5C50 65.5 51.5 65.5 53 64" stroke="#1E293B" stroke-width="2" stroke-linecap="round"/>
+                            <!-- Cute Hardhat (Construction Helmet) -->
+                            <path d="M22 36C22 24 32 18 50 18C68 18 78 24 78 36H22Z" fill="#FBBF24" stroke="#D97706" stroke-width="2.5"/>
+                            <path d="M46 18C46 12 48 10 50 10C52 10 54 12 54 18H46Z" fill="#FBBF24" stroke="#D97706" stroke-width="2.5"/>
+                            <rect x="47" y="24" width="6" height="12" fill="#D97706" rx="1"/>
+                        </svg>
+                        <!-- Floating arrow visual detail -->
+                        <div class="absolute -right-2 -top-2 w-8 h-8 rounded-full bg-indigo-50 border border-indigo-200 flex items-center justify-center shadow-md animate-bounce">
+                            <i class="fa-solid fa-arrow-trend-up text-indigo-600 text-xs"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-slate-800 font-bold text-sm md:text-base">キャンバスは綺麗に空っぽだよ！</h3>
+                    <p class="text-xs text-slate-400 mt-1.5 text-center max-w-sm leading-relaxed">
+                        ダブルクリックして「新規タスク」を追加するか、左パネルからJSONを読み込んで開始してね！ぷらクマがスケジュールを作るよ。
+                    </p>
+                </div>
+
+                <!-- SVG Line Draw Layer -->
+                <svg id="svg-layer" class="absolute top-0 left-0 w-[3000px] h-[3000px] pointer-events-none z-0">
+                    <defs>
+                        <!-- Arrowhead marker for normal edges -->
+                        <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                            <path d="M 0 1 L 10 5 L 0 9 z" fill="#4f46e5" />
+                        </marker>
+                    </defs>
+                    <!-- Freehand doodles will be inserted dynamically here -->
+                    <g id="svg-doodles-group"></g>
+                    <!-- Connection lines will be inserted dynamically here -->
+                    <g id="svg-edges-group"></g>
+                    <!-- Temporary drafting connection line when connecting nodes -->
+                    <path id="temp-line" d="" fill="none" stroke="#818cf8" stroke-width="2.5" stroke-dasharray="4" class="hidden" />
+                </svg>
+
+                <!-- Div wrapper containing nodes to allow dragging over a very large grid coordinate -->
+                <div id="nodes-container" class="absolute top-0 left-0 w-[3000px] h-[3000px] z-10 pointer-events-none">
+                    <!-- Dynamic Interactive Nodes (Task Notes) will be spawned here -->
+                </div>
+
+                <div id="sticky-notes-container" class="absolute top-0 left-0 w-[3000px] h-[3000px] z-20 pointer-events-none">
+                    <!-- Dynamic sticky notes will be spawned here -->
+                </div>
+            </div>
+
+            <!-- VIEW B: WBS Table (Hidden initially) -->
+            <div id="wbs-container" class="absolute inset-0 bg-slate-50 overflow-auto p-4 md:p-6 hidden" style="-webkit-overflow-scrolling: touch;">
+                <div class="max-w-6xl mx-auto bg-white rounded-xl border border-slate-200 p-4 md:p-6 shadow-md">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+                        <div>
+                            <h3 class="text-base md:text-lg font-bold text-slate-800"><i class="fa-solid fa-list-check mr-2 text-indigo-500"></i>WBS</h3>
+                            <p class="text-xs text-slate-500 mt-1">ここで作業を洗い出すと、アロー図とガントチャートにも反映されます。</p>
+                        </div>
+                        <button onclick="addWbsTask()" class="self-start sm:self-auto bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-2 rounded-md shadow-sm transition flex items-center space-x-1.5">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>WBSタスク追加</span>
+                        </button>
+                    </div>
+
+                    <div class="w-full overflow-x-auto border border-slate-200 rounded-lg">
+                        <table class="w-full text-left border-collapse" id="wbs-table">
+                            <!-- Injected by JS -->
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW C: Dynamic Gantt Chart (Hidden initially) -->
+            <div id="gantt-container" class="absolute inset-0 bg-slate-50 overflow-auto p-4 md:p-6 hidden" style="-webkit-overflow-scrolling: touch;">
+                <div class="max-w-6xl mx-auto bg-white rounded-xl border border-slate-200 p-4 md:p-6 shadow-md">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+                        <div>
+                            <h3 class="text-base md:text-lg font-bold text-slate-800"><i class="fa-solid fa-chart-gantt mr-2 text-indigo-500"></i>自動連動型ガントチャート</h3>
+                            <p class="text-xs text-slate-500 mt-1">アローダイアグラムの依存関係、工期、手動での固定時間から自動計算されたガントチャートです。</p>
+                        </div>
+                    </div>
+
+                    <!-- Gantt Content Container -->
+                    <div class="w-full overflow-x-auto border border-slate-200 rounded-lg">
+                        <table class="w-full text-left border-collapse" id="gantt-table">
+                            <!-- Injected by JS -->
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Modal: Share & Export -->
+<div id="share-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white border border-slate-200 w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
+        <button onclick="closeModal('share-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <h3 class="text-xl font-bold text-slate-800 mb-4"><i class="fa-solid fa-share-nodes text-indigo-500 mr-2"></i>共有 & 保存</h3>
+        <p class="text-xs text-slate-500 mb-4">作成した図（アローダイアグラムとWBS、追加した写真含む）を保存したり、周りにアピールしましょう！</p>
+
+        <div class="space-y-4">
+            <!-- Save Local File Direct Shortcut -->
+            <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-lg">
+                <span class="text-xs font-semibold text-slate-700 block mb-1.5"><i class="fa-solid fa-file-code text-indigo-500 mr-1.5"></i>このプロジェクトをJSONファイルで保存</span>
+                <p class="text-[10px] text-slate-500 mb-2.5">すべての配置、タスクの紐づき、個別手動設定時間(固定日程)、貼り付けた写真も安全にローカルファイルに保存します。</p>
+                <button onclick="exportJSONFile(); closeModal('share-modal');" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 rounded transition shadow-sm">
+                    <i class="fa-solid fa-download mr-1.5"></i>ダウンロード
+                </button>
+            </div>
+
+            <!-- Image Export -->
+            <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-lg">
+                <span class="text-xs font-semibold text-slate-700 block mb-1.5"><i class="fa-solid fa-image text-emerald-500 mr-1.5"></i>表示中の画面をPNG保存</span>
+                <p class="text-[10px] text-slate-500 mb-2.5">現在開いているアロー、WBS、ガントを画像として保存します。X投稿用の素材に便利です。</p>
+                <button onclick="exportCurrentViewPNG(); closeModal('share-modal');" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 rounded transition shadow-sm">
+                    <i class="fa-solid fa-download mr-1.5"></i>PNGダウンロード
+                </button>
+            </div>
+
+            <!-- URL Share -->
+            <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-lg">
+                <span class="text-xs font-semibold text-slate-700 block mb-1.5"><i class="fa-solid fa-link text-cyan-600 mr-1.5"></i>編集できるURLをコピー</span>
+                <p class="text-[10px] text-slate-500 mb-2.5">現在のデータをURLに埋め込んで共有します。受け取った人もそのまま編集できます。</p>
+                <button onclick="copyShareableURL()" class="w-full bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold py-2 rounded border border-slate-300 transition shadow-sm">
+                    <i class="fa-regular fa-copy mr-1.5"></i>URLをコピー
+                </button>
+            </div>
+
+            <!-- X Post -->
+            <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-lg">
+                <span class="text-xs font-semibold text-slate-700 block mb-1.5"><i class="fa-brands fa-x-twitter text-slate-800 mr-1.5"></i>作成内容をX(Twitter)に投稿する</span>
+                <p class="text-[10px] text-slate-500 mb-2.5">完成した工期日数やタスク構成を報告して拡散に協力してください。</p>
+                <button onclick="shareOnX(); closeModal('share-modal');" class="w-full bg-black hover:bg-slate-900 text-white text-xs font-bold py-2 rounded transition flex items-center justify-center shadow-md">
+                    <i class="fa-brands fa-x-twitter mr-1.5"></i>作成完了をポスト
+                </button>
+            </div>
+
+            <div class="text-[10px] text-slate-500 text-center">
+                作者: <a href="https://x.com/taataru_group" target="_blank" rel="noopener" class="font-semibold text-indigo-600 hover:underline">たあたる / @taataru_group</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Settings -->
+<div id="settings-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white border border-slate-200 w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
+        <button onclick="closeModal('settings-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <h3 class="text-xl font-bold text-slate-800 mb-4"><i class="fa-solid fa-gear text-indigo-500 mr-2"></i>設定</h3>
+
+        <div class="space-y-4">
+            <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-lg">
+                <span class="text-xs font-semibold text-slate-700 block mb-1.5"><i class="fa-regular fa-calendar text-indigo-500 mr-1.5"></i>プロジェクト開始日</span>
+                <p class="text-[10px] text-slate-500 mb-2.5">ガントチャートと各タスクの日付表示の基準になります。</p>
+                <input id="project-start-date-input" type="date" onchange="onProjectStartDateChange(this.value)" class="w-full bg-white border border-slate-200 rounded-lg text-xs p-2 text-slate-700 focus:outline-none focus:border-indigo-500 transition">
+            </div>
+
+            <div class="bg-slate-50 border border-slate-200 p-3.5 rounded-lg">
+                <span class="text-xs font-semibold text-slate-700 block mb-1.5"><i class="fa-solid fa-layer-group text-indigo-500 mr-1.5"></i>テンプレート変更</span>
+                <p class="text-[10px] text-slate-500 mb-2.5">テンプレートを変更すると現在のタスク、接続、写真、固定日程は上書きされます。必要なら先に保存してください。</p>
+                <select id="settings-preset-selector" class="w-full bg-white border border-slate-200 rounded-lg text-xs p-2 text-slate-700 focus:outline-none focus:border-indigo-500 transition mb-2.5">
+                    <option value="game">🎮 3Dミニゲーム開発プロジェクト</option>
+                    <option value="web">🌐 コーポレートサイト制作</option>
+                    <option value="app">📱 スマホ向けアプリ配信</option>
+                </select>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="exportJSONFile()" class="bg-white hover:bg-slate-50 text-slate-700 text-xs py-2 rounded border border-slate-300 transition shadow-sm">
+                        <i class="fa-solid fa-download mr-1.5 text-slate-500"></i>先に保存
+                    </button>
+                    <button onclick="applyPresetFromSettings()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 rounded transition shadow-sm">
+                        テンプレート変更
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Core JavaScript Logic -->
+<script src="js/app.js"></script>
+</body>
+</html>
+
