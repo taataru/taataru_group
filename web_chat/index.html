@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>たあたる式AI | 実験公開版</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <p class="eyebrow">EXPERIMENTAL EMOTION AI</p>
+      <h1>たあたる式AI</h1>
+      <p class="description">感情波と学習済みの単語連鎖で返事をする、実験中のブラウザ版です。</p>
+    </header>
+
+    <section class="panel" aria-label="AIとの会話">
+      <div class="status">
+        <div class="mood">
+          <span class="mood-dot" id="moodDot"></span>
+          <div>
+            <span class="label">現在の感情</span>
+            <strong id="zone">読込中</strong>
+          </div>
+        </div>
+        <div class="coordinates" id="coordinates">x: -- / y: --</div>
+      </div>
+
+      <div id="messages" class="messages" aria-live="polite">
+        <article class="bubble ai">
+          <p>こんにちは。なにか 話し て みて ね</p>
+        </article>
+      </div>
+
+      <form id="chatForm" class="composer">
+        <label class="sr-only" for="input">メッセージ</label>
+        <input id="input" name="input" type="text" autocomplete="off"
+               placeholder="話しかけてみる..." maxlength="180" disabled>
+        <button id="sendButton" type="submit" disabled>送信</button>
+      </form>
+    </section>
+
+    <footer class="footer">
+      <button type="button" id="resetButton">感情と会話をリセット</button>
+      <p>公開用スナップショット版。学習はこのページ上では行いません。</p>
+    </footer>
+  </main>
+  <script src="./data/model-data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
