@@ -3,27 +3,41 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>たあたる式AI | 実験公開版</title>
+  <title>ryna / らいな | 実験公開版</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <main class="shell">
     <header class="hero">
-      <p class="eyebrow">EXPERIMENTAL EMOTION AI</p>
-      <h1>たあたる式AI</h1>
-      <p class="description">感情波と学習済みの単語連鎖で返事をする、実験中のブラウザ版です。</p>
+      <p class="eyebrow">TAATARU EMOTION AI / EXPERIMENTAL</p>
+      <h1>ryna / らいな</h1>
+      <p class="description">自分と相手の感情波の組み合わせで、学習した返し方を選ぶ実験中のブラウザ版です。</p>
+      <p class="description">らいなは感情表現の強い実験AIです。荒い言葉や重い反応を返す場合があります。</p>
     </header>
 
     <section class="panel" aria-label="AIとの会話">
       <div class="status">
-        <div class="mood">
-          <span class="mood-dot" id="moodDot"></span>
-          <div>
-            <span class="label">現在の感情</span>
-            <strong id="zone">読込中</strong>
+        <div class="moods">
+          <div class="mood">
+            <span class="mood-dot" id="moodDot"></span>
+            <div>
+              <span class="label">自分の感情</span>
+              <strong id="zone">読込中</strong>
+            </div>
+          </div>
+          <div class="mood">
+            <span class="mood-dot" id="userMoodDot"></span>
+            <div>
+              <span class="label">相手の推定感情</span>
+              <strong id="userZone">読込中</strong>
+            </div>
           </div>
         </div>
-        <div class="coordinates" id="coordinates">x: -- / y: --</div>
+        <div class="state-detail">
+          <div class="coordinates" id="coordinates">自分 x: -- / y: --</div>
+          <div class="coordinates" id="userCoordinates">相手 x: -- / y: --</div>
+          <div class="memory" id="topicMemory">話題記憶: --</div>
+        </div>
       </div>
 
       <div id="messages" class="messages" aria-live="polite">
@@ -42,7 +56,7 @@
 
     <footer class="footer">
       <button type="button" id="resetButton">感情と会話をリセット</button>
-      <p>公開用スナップショット版。学習はこのページ上では行いません。</p>
+      <p>公開用スナップショット版。会話はブラウザ内で処理され、外部へ送信されません。</p>
     </footer>
   </main>
   <script src="./data/model-data.js"></script>

@@ -84,6 +84,12 @@ h1 {
   gap: 12px;
 }
 
+.moods {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
 .mood-dot {
   width: 13px;
   height: 13px;
@@ -100,7 +106,8 @@ h1 {
   letter-spacing: 0.08em;
 }
 
-#zone {
+#zone,
+#userZone {
   display: block;
   margin-top: 2px;
   font-size: 19px;
@@ -110,6 +117,20 @@ h1 {
   color: var(--muted);
   font-size: 13px;
   font-variant-numeric: tabular-nums;
+}
+
+.state-detail {
+  text-align: right;
+}
+
+.memory {
+  max-width: min(360px, 54vw);
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .messages {
@@ -255,6 +276,10 @@ h1 {
 
   .coordinates {
     font-size: 12px;
+  }
+
+  .memory {
+    max-width: 48vw;
   }
 
   .bubble {
