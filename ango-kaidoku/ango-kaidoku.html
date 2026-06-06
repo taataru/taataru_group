@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>taata API Key Decoder</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --ink: #22262f;
+      --muted: #687083;
+      --line: #d7dde8;
+      --accent: #7a3f23;
+      --accent-2: #176b87;
+      --soft: #fff4ed;
+      --danger: #b42318;
+      font-family: "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 44px;
+    }
+
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .status {
+      min-height: 24px;
+      color: var(--muted);
+      font-size: 14px;
+      text-align: right;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .form,
+    .output {
+      display: grid;
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      font: 15px/1.45 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      padding: 10px 11px;
+      outline: none;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--soft);
+    }
+
+    textarea {
+      min-height: 178px;
+      resize: vertical;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 1px solid transparent;
+      border-radius: 6px;
+      min-height: 40px;
+      padding: 0 14px;
+      color: #fff;
+      background: var(--accent);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      color: var(--accent);
+      background: #fff;
+      border-color: var(--accent);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+      background: #fbfcfe;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .metric strong {
+      font-size: 18px;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    pre {
+      min-height: 152px;
+      margin: 0;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #111827;
+      color: #e6edf7;
+      padding: 14px;
+      overflow: auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font: 14px/1.55 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+    }
+
+    .key {
+      min-height: 76px;
+      font-size: 18px;
+    }
+
+    .error {
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    .hint {
+      margin-top: -8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .guide {
+      margin-top: 18px;
+    }
+
+    .guide h2 {
+      margin: 0 0 14px;
+      font-size: 20px;
+      letter-spacing: 0;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .step {
+      min-height: 82px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfe;
+      padding: 10px;
+      display: grid;
+      align-content: center;
+      gap: 5px;
+    }
+
+    .step b {
+      color: var(--accent);
+      font-size: 13px;
+    }
+
+    .step span {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .notes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .note {
+      border-left: 4px solid var(--accent-2);
+      padding: 8px 0 8px 12px;
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 14px;
+    }
+
+    .note code {
+      color: var(--ink);
+      background: #eef2f7;
+      border-radius: 4px;
+      padding: 1px 4px;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        width: min(100% - 20px, 760px);
+        padding-top: 18px;
+      }
+
+      header,
+      .workspace {
+        display: grid;
+      }
+
+      .status {
+        text-align: left;
+      }
+
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .flow,
+      .notes {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>taata API Key Decoder</h1>
+      <div class="status" id="status">ready</div>
+    </header>
+
+    <div class="workspace">
+      <section>
+        <div class="form">
+          <label>
+            Encrypted ta
+            <textarea id="encrypted" spellcheck="false" autocomplete="off"></textarea>
+          </label>
+          <div class="hint">Encrypted ta は t と a だけ対応。改行や空白は無視します。</div>
+
+          <label>
+            Dummy positions used at encode
+            <input id="removeSpec" spellcheck="false" autocomplete="off" placeholder="1t2a30t105a">
+          </label>
+
+          <div class="row">
+            <label>
+              Restore rounds
+              <input id="restoreRounds" type="number" min="0" max="1000000" step="1" value="999761">
+            </label>
+            <label>
+              Key length
+              <input id="keyLength" type="number" min="1" step="1" placeholder="39">
+            </label>
+          </div>
+
+          <div class="row">
+            <label>
+              Chunk lengths
+              <input id="chunkLengths" spellcheck="false" autocomplete="off" placeholder="空欄ならKey lengthから自動計算">
+            </label>
+            <span></span>
+          </div>
+
+          <div class="actions">
+            <button id="decodeBtn" type="button">Decode</button>
+            <button id="copyBtn" class="secondary" type="button">Copy</button>
+            <button id="clearBtn" class="secondary" type="button">Clear</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="output">
+        <div class="metrics">
+          <div class="metric"><span>removed</span><strong id="mRemoved">0</strong></div>
+          <div class="metric"><span>payload</span><strong id="mPayload">0</strong></div>
+          <div class="metric"><span>chunks</span><strong id="mChunks">0</strong></div>
+          <div class="metric"><span>length</span><strong id="mLength">0</strong></div>
+        </div>
+
+        <pre id="apiKey" class="key"></pre>
+        <pre id="details"></pre>
+      </section>
+    </div>
+
+    <section class="guide">
+      <h2>使い方</h2>
+      <div class="flow" aria-label="復号の流れ">
+        <div class="step"><b>1. Encrypted ta</b><span>公開側に置いた ta 文字列を貼ります。改行はそのままでOKです。</span></div>
+        <div class="step"><b>2. Dummy</b><span>暗号化時のダミー指定を入力します。</span></div>
+        <div class="step"><b>3. Rounds</b><span>暗号化時に出た restore_rounds を入力します。</span></div>
+        <div class="step"><b>4. Key length</b><span>暗号化時に出た key_length を入力します。</span></div>
+        <div class="step"><b>5. Decode</b><span>ダミーを外して、元のAPIキーに戻します。</span></div>
+      </div>
+
+      <div class="notes">
+        <div class="note">
+          <b>Aが増えるとき</b><br>
+          末尾に余計な <code>A</code> が出る場合は、最後のブロック長が長すぎます。<code>Key length</code> に元キーの文字数を入れると自動で調整します。
+        </div>
+        <div class="note">
+          <b>長いAPIキー</b><br>
+          50文字なら <code>10,10,10,10,10</code> の5ブロックです。<code>Key length</code> に <code>50</code> を入れれば、Chunk lengths は空欄で復号できます。
+        </div>
+        <div class="note">
+          <b>対応文字</b><br>
+          元のAPIキーとして復元できる文字は <code>ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-</code> です。暗号文側は <code>t</code> と <code>a</code> だけを使います。
+        </div>
+        <div class="note">
+          <b>保管のコツ</b><br>
+          <code>ta本体</code> と <code>restore_rounds / dummy / key_length</code> は別々に保管します。同じGitリポジトリにまとめない運用が前提です。
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";
+    const PAYLOAD_DIGITS = 50;
+    const WIDTH = 10;
+    const HEIGHT = 5;
+    const PERIOD = 1000000;
+    const BITS_TO_DIGIT = {
+      "0": "0",
+      "10": "5",
+      "1100": "1",
+      "11010": "2",
+      "11011": "3",
+      "11100": "4",
+      "11101": "6",
+      "11110": "8",
+      "111110": "7",
+      "111111": "9",
+    };
+    const matrixCache = new Map();
+
+    const $ = (id) => document.getElementById(id);
+
+    function applyDiffRound(digits) {
+      const horiz = [digits[0]];
+      for (let i = 1; i < PAYLOAD_DIGITS; i += 1) {
+        horiz.push((digits[i] - digits[i - 1] + 10) % 10);
+      }
+
+      const rows = [];
+      for (let r = 0; r < HEIGHT; r += 1) {
+        rows.push(horiz.slice(r * WIDTH, (r + 1) * WIDTH));
+      }
+
+      const vert = [rows[0].slice()];
+      for (let r = 1; r < HEIGHT; r += 1) {
+        const row = [];
+        for (let c = 0; c < WIDTH; c += 1) {
+          row.push((rows[r][c] - rows[r - 1][c] + 10) % 10);
+        }
+        vert.push(row);
+      }
+
+      return vert.flat();
+    }
+
+    function buildRoundMatrix() {
+      const matrix = Array.from({ length: PAYLOAD_DIGITS }, () => Array(PAYLOAD_DIGITS).fill(0));
+      for (let col = 0; col < PAYLOAD_DIGITS; col += 1) {
+        const basis = Array(PAYLOAD_DIGITS).fill(0);
+        basis[col] = 1;
+        const result = applyDiffRound(basis);
+        for (let row = 0; row < PAYLOAD_DIGITS; row += 1) {
+          matrix[row][col] = result[row] % 10;
+        }
+      }
+      return matrix;
+    }
+
+    function multiplyMatrices(left, right) {
+      const result = Array.from({ length: PAYLOAD_DIGITS }, () => Array(PAYLOAD_DIGITS).fill(0));
+      for (let row = 0; row < PAYLOAD_DIGITS; row += 1) {
+        for (let mid = 0; mid < PAYLOAD_DIGITS; mid += 1) {
+          const value = left[row][mid];
+          if (!value) continue;
+          for (let col = 0; col < PAYLOAD_DIGITS; col += 1) {
+            result[row][col] = (result[row][col] + value * right[mid][col]) % 10;
+          }
+        }
+      }
+      return result;
+    }
+
+    function multiplyMatrixVector(matrix, vector) {
+      return matrix.map((row) => row.reduce((sum, value, col) => (sum + value * vector[col]) % 10, 0));
+    }
+
+    function identityMatrix() {
+      return Array.from({ length: PAYLOAD_DIGITS }, (_, row) =>
+        Array.from({ length: PAYLOAD_DIGITS }, (_, col) => (row === col ? 1 : 0))
+      );
+    }
+
+    function matrixPower(rounds) {
+      if (matrixCache.has(rounds)) return matrixCache.get(rounds);
+      let result = identityMatrix();
+      let base = buildRoundMatrix();
+      let exponent = rounds;
+      while (exponent > 0) {
+        if (exponent & 1) result = multiplyMatrices(result, base);
+        base = multiplyMatrices(base, base);
+        exponent = Math.floor(exponent / 2);
+      }
+      matrixCache.set(rounds, result);
+      return result;
+    }
+
+    function applyRounds(digits, rounds) {
+      const normalized = ((rounds % PERIOD) + PERIOD) % PERIOD;
+      if (normalized > 1000) {
+        return multiplyMatrixVector(matrixPower(normalized), digits);
+      }
+
+      let result = digits.slice();
+      for (let i = 0; i < normalized; i += 1) {
+        result = applyDiffRound(result);
+      }
+      return result;
+    }
+
+    function parsePositionSpec(spec) {
+      const clean = spec.trim();
+      if (!clean) return [];
+      const matches = [...clean.matchAll(/(\d+)([ta])/g)].map((match) => ({
+        position: Number(match[1]),
+        letter: match[2],
+        raw: match[0],
+      }));
+      if (matches.map((item) => item.raw).join("") !== clean) {
+        throw new Error("位置指定は 12t34a のように入力してください");
+      }
+      return matches;
+    }
+
+    function removeDummyLetters(text, spec) {
+      const result = [...text];
+      const removals = parsePositionSpec(spec)
+        .sort((a, b) => a.position - b.position)
+        .map((item, index) => ({
+          position: item.position + index,
+          letter: item.letter,
+        }))
+        .sort((a, b) => b.position - a.position);
+      for (const item of removals) {
+        if (item.position < 1 || item.position > result.length) {
+          throw new Error(`削除位置が範囲外です: ${item.position}`);
+        }
+        const actual = result[item.position - 1];
+        if (actual !== item.letter) {
+          throw new Error(`${item.position}文字目は ${actual} です。指定は ${item.letter} でした`);
+        }
+        result.splice(item.position - 1, 1);
+      }
+      return { text: result.join(""), removed: removals.length };
+    }
+
+    function taToDigits(taText) {
+      const clean = taText.replace(/\s+/g, "");
+      if (!/^[ta]*$/.test(clean)) {
+        throw new Error("ta文字列には t と a だけを入れてください");
+      }
+
+      const bits = clean.replaceAll("t", "0").replaceAll("a", "1");
+      let cursor = "";
+      let digits = "";
+      for (const bit of bits) {
+        cursor += bit;
+        if (BITS_TO_DIGIT[cursor]) {
+          digits += BITS_TO_DIGIT[cursor];
+          cursor = "";
+        }
+      }
+      if (cursor) {
+        throw new Error("ハフマン符号の末尾が途中で切れています");
+      }
+      if (digits.length % PAYLOAD_DIGITS !== 0) {
+        throw new Error(`数字ペイロードが50桁単位になりません: ${digits.length}桁`);
+      }
+      return digits;
+    }
+
+    function chunkLengthsFromKeyLength(keyLength, chunkCount) {
+      if (!Number.isInteger(keyLength) || keyLength < 1) {
+        throw new Error("元キーの文字数は1以上の整数にしてください");
+      }
+      const lengths = [];
+      let remaining = keyLength;
+      while (remaining > 0) {
+        lengths.push(Math.min(10, remaining));
+        remaining -= 10;
+      }
+      if (lengths.length !== chunkCount) {
+        throw new Error(`元キーの文字数から作ったブロック数は${lengths.length}個ですが、暗号文は${chunkCount}個です`);
+      }
+      return lengths;
+    }
+
+    function parseChunkLengths(spec, chunkCount, keyLengthText) {
+      const parts = spec.split(",").map((part) => part.trim()).filter(Boolean);
+      if (!parts.length) {
+        if (keyLengthText.trim()) {
+          return chunkLengthsFromKeyLength(Number(keyLengthText), chunkCount);
+        }
+        return Array(chunkCount).fill(10);
+      }
+      const lengths = parts.map((part) => Number(part));
+      if (lengths.length !== chunkCount) {
+        throw new Error(`ブロック数は${chunkCount}個です。長さ指定も${chunkCount}個にしてください`);
+      }
+      if (lengths.some((value) => !Number.isInteger(value) || value < 1 || value > 10)) {
+        throw new Error("各ブロック長は1〜10の整数にしてください");
+      }
+      return lengths;
+    }
+
+    function digitsToText(digits, charCount) {
+      const needed = digits.slice(0, charCount * 2);
+      let text = "";
+      for (let i = 0; i < needed.length; i += 2) {
+        const index = needed[i] * 10 + needed[i + 1];
+        if (index < 0 || index >= CHARS.length) {
+          throw new Error(`文字番号が範囲外です: ${index}`);
+        }
+        text += CHARS[index];
+      }
+      return text;
+    }
+
+    function decode() {
+      const encrypted = $("encrypted").value;
+      const removeSpec = $("removeSpec").value.trim();
+      const restoreRounds = Number($("restoreRounds").value);
+      if (!Number.isInteger(restoreRounds) || restoreRounds < 0) {
+        throw new Error("復元回数は0以上の整数にしてください");
+      }
+
+      const cleanInput = encrypted.replace(/\s+/g, "");
+      const removed = removeDummyLetters(cleanInput, removeSpec);
+      const payloadDigits = taToDigits(removed.text);
+      const chunkCount = payloadDigits.length / PAYLOAD_DIGITS;
+      const chunkLengths = parseChunkLengths($("chunkLengths").value, chunkCount, $("keyLength").value);
+
+      const decodedChunks = [];
+      const detailLines = [];
+      for (let i = 0; i < chunkCount; i += 1) {
+        const payload = payloadDigits.slice(i * PAYLOAD_DIGITS, (i + 1) * PAYLOAD_DIGITS);
+        const transformed = [...payload].map((digit) => Number(digit));
+        const restoredDigits = applyRounds(transformed, restoreRounds);
+        const text = digitsToText(restoredDigits, chunkLengths[i]);
+        decodedChunks.push(text);
+        detailLines.push(`${String(i + 1).padStart(2, "0")}: ${payload} -> ${text}`);
+      }
+
+      const apiKey = decodedChunks.join("");
+      $("apiKey").textContent = apiKey;
+      $("details").textContent = detailLines.join("\n");
+      $("mRemoved").textContent = String(removed.removed);
+      $("mPayload").textContent = String(payloadDigits.length);
+      $("mChunks").textContent = String(chunkCount);
+      $("mLength").textContent = String(apiKey.length);
+      $("status").textContent = "decoded";
+      $("status").className = "status";
+    }
+
+    $("decodeBtn").addEventListener("click", () => {
+      try {
+        decode();
+      } catch (error) {
+        $("status").textContent = error.message;
+        $("status").className = "status error";
+      }
+    });
+
+    $("copyBtn").addEventListener("click", async () => {
+      const text = $("apiKey").textContent;
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+      $("status").textContent = "copied";
+      $("status").className = "status";
+    });
+
+      $("clearBtn").addEventListener("click", () => {
+      $("encrypted").value = "";
+      $("removeSpec").value = "";
+      $("keyLength").value = "";
+      $("chunkLengths").value = "";
+      $("apiKey").textContent = "";
+      $("details").textContent = "";
+      $("mRemoved").textContent = "0";
+      $("mPayload").textContent = "0";
+      $("mChunks").textContent = "0";
+      $("mLength").textContent = "0";
+      $("status").textContent = "ready";
+      $("status").className = "status";
+    });
+  </script>
+</body>
+</html>
