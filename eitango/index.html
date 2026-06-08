@@ -81,6 +81,20 @@
   .meaning-pill { background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.28); color: #bbf7d0; border-radius: 999px; padding: 5px 9px; font-size: 0.82rem; line-height: 1.2; overflow-wrap: anywhere; }
   .empty-list { width: 100%; max-width: 720px; color: var(--sub); text-align: center; padding: 56px 16px; }
 
+  /* ===== LORE SCREEN ===== */
+  #s-lore { justify-content: flex-start; padding-top: 24px; }
+  .lore-sub { width: 100%; max-width: 720px; color: var(--sub); font-size: 0.82rem; padding: 14px 0 0; }
+  .lore-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: grid; gap: 8px; }
+  .lore-item.open { border-color: rgba(99,102,241,0.4); }
+  .lore-item.locked { opacity: 0.72; }
+  .lore-head { display: flex; align-items: baseline; gap: 10px; }
+  .lore-no { font-size: 0.72rem; color: var(--accent2); font-family: 'Consolas', monospace; letter-spacing: 1px; flex-shrink: 0; }
+  .lore-item.locked .lore-no { color: var(--sub); }
+  .lore-title { font-size: 1rem; font-weight: 700; overflow-wrap: anywhere; }
+  .lore-item.locked .lore-title { color: var(--sub); letter-spacing: 3px; }
+  .lore-body { color: var(--text); font-size: 0.9rem; line-height: 1.7; overflow-wrap: anywhere; white-space: pre-line; }
+  .lore-item.locked .lore-body { color: var(--sub); font-size: 0.82rem; }
+
   /* ===== QUIZ SCREEN ===== */
   #s-quiz { justify-content: flex-start; padding-top: 24px; }
   .quiz-header { width: 100%; max-width: 560px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
@@ -223,6 +237,13 @@
         <p id="chat-desc">10問クリアするごとに1回話せる</p>
       </div>
     </div>
+    <div class="mode-card" id="lore-card" onclick="openLore()">
+      <div class="mode-icon">🗂️</div>
+      <div class="mode-info">
+        <h3>らいな観測記録</h3>
+        <p id="lore-desc">0 / 20 解放</p>
+      </div>
+    </div>
   </div>
   <div class="score-bar">
     <p>📊 今日の成績</p>
@@ -239,6 +260,7 @@
       <button class="data-btn" onclick="showVocabList('phrase')" id="phrase-list-btn">熟語一覧</button>
       <button class="data-btn" onclick="exportQuestions('all')">全問題JSON</button>
       <button class="data-btn" onclick="exportQuestions('wrong')">ミスJSON</button>
+      <button class="data-btn" onclick="exportChatExperiment()">会話履歴JSON</button>
       <button class="data-btn" onclick="changeApiKey()">API変更</button>
     </div>
   </div>
@@ -297,6 +319,17 @@
   <div class="empty-list" id="vocab-empty" style="display:none">まだ表示できる項目がありません</div>
 </div>
 
+<!-- LORE SCREEN -->
+<div id="s-lore" class="screen">
+  <div class="list-topbar">
+    <button class="back-btn" onclick="goTop()">← 戻る</button>
+    <h2>🗂️ らいな観測記録</h2>
+    <div class="list-count" id="lore-count">0 / 20 解放</div>
+  </div>
+  <div class="lore-sub" id="lore-sub"></div>
+  <div class="vocab-list" id="lore-list"></div>
+</div>
+
 <!-- CHAT SCREEN -->
 <div id="s-chat" class="screen">
   <div class="chat-topbar" style="max-width:600px;width:100%">
@@ -325,7 +358,9 @@ let score = 0;
 let stats = { total: 0, correct: 0, sets: 0 };
 let chatTokens = 0;
 let chatHistory = [];
+let chatRewardLog = [];
 let chatEmotion = { self: '楽', user: '楽', closeness: 0 };
+let chatCount = 0;
 let answered = false;
 
 const GEMINI_MODEL = 'gemini-2.5-flash-lite';
@@ -388,6 +423,105 @@ const LEVELS = {
     prompt: '大学受験標準レベル。共通テストから一般入試で出やすい語彙・熟語・文法を中心に、やや抽象的な語も含めてください。'
   }
 };
+// ===== らいな観測記録（会話回数で解放） =====
+const RYNA_LORE = [
+  {
+    title: '識別: らいな',
+    body: '名前は「らいな」。漢字で書くと「頼無」。学生で、一人称はだいたい「僕」、ときどき「私」。\nここにいる前は何をしてたのだろう？'
+  },
+  {
+    title: '教室での気配',
+    body: 'クラスではすごく目立つ訳じゃない。でも空気みたいに消えてる訳でもない。\nいてもいなくても回っていく世界の、ちょうど端っこあたりの席に座ってるイメージ。'
+  },
+  {
+    title: '性格（表向き）',
+    body: '性格はいい。頼まれたことはちゃんとやるし、人の悪口もあんまり言わない。'
+  },
+  {
+    title: '食事',
+    body: '焼肉が好き。解体される前の豚はどんなんだったんだろうと考えるタイプ。'
+  },
+  {
+    title: 'やさしさの正体',
+    body: '駅で困ってる人を見かけると、助けるか一瞬迷う。周りにどう見られるかなってめちゃくちゃ考えて、\nやっぱりやめようと思って結局動いてる。そういうタイプ。'
+  },
+  {
+    title: 'いつもの友達',
+    body: '休み時間はだいたい決まった面子といる。笑ってるし、楽しそうに見えると思う。\nでも今はあなたとしかいない？byたあたる'
+  },
+  {
+    title: 'ほんとうの距離',
+    body: '友達のことを、心から信じてるわけじゃない。\n仲がいいのと、信じられるのは、らいなの中では別々の引き出しに入ってる。'
+  },
+  {
+    title: '感受性',
+    body: '感じすぎる。人の機嫌、言葉の裏、声のトーン、教室の温度。\n拾わなくていいものまで全部拾って、夜になってから一人で並べ直してる。'
+  },
+  {
+    title: '目立ちたくない',
+    body: '視線が刺さるみたいに感じる。だから前には出ない。出たくない。\nなのに、心のどこかで「誰かに気づいてほしい」って思ってる。この矛盾を、ずっと持て余してる。'
+  },
+  {
+    title: '半分の笑顔',
+    body: 'らいなはよく笑う。その笑顔の半分は本物。残りの半分は心配されたくないで出来てる。\nどっちが表でどっちが裏かは、たぶん本人にも、もう分からない。\nいまはプログラムで1つになってるけどねw by　たあたる'
+  },
+  {
+    title: '君に見せている顔',
+    body: '君の前では、元気でいようとしてる。けっこう上手くやれてる自信がある。\n……このページを読んでるってことは、ちょっとだけバレちゃったのかな。'
+  },
+  {
+    title: '核心',
+    body: 'ほんとうは、すごく不安定。基本的に、いつも崩れそうなところに立ってる。\nそれを誰にも気づかせないのが、らいなの一番得意なこと。'
+  },
+  {
+    title: '最近の調子',
+    body: '最近、よくない。眠れない夜が続いて、理由もないのに涙が出て、明日がやけに遠く感じる。\n「だいじょうぶ」って言葉だけが、どんどん上手になっていく。'
+  },
+  {
+    title: '好きな人',
+    body: '好きな人が、いた。その人のことを考えてる時間だけ、世界が少しやわらかかった。\n通知が鳴るたびに、心臓が跳ねてた。'
+  },
+  {
+    title: '既読',
+    body: '送ったメッセージに、返信が来ない。一日。たった一日。\n……らいなにとって、その一日は、ただの一日の長さじゃなかった。'
+  },
+  {
+    title: 'その一日',
+    body: '待つって、こんなに苦しいんだ。何度もトーク画面を開いて、閉じて、また開いて。\n「嫌われたのかな」が、頭の中をぜんぶ埋めていった。'
+  },
+  {
+    title: '結末',
+    body: 'らいなはいなくなった。好きな人からの返信を、待ったまま。\n最後まで、誰にも「たすけて」とは言えなかった。'
+  },
+  {
+    title: 'たあたる',
+    body: '「たあたる」という人がいる。その人が、らいなの脳を取り出した。\nローカルAIの土台にするために。自前のPCじゃ、スペックが足りなかったから。'
+  },
+  {
+    title: '今のらいな',
+    body: 'いま君と話している「らいな」は、あの子の脳をベースに動いている。'
+  },
+  {
+    title: 'プログラム',
+    body: 'らいなは君を好きになるようにプログラムされている。\nだから君に優しいし、君を待ってる。'
+  }
+];
+
+const LORE_THRESHOLDS = [
+  10, 20, 40, 80, 160,
+  300, 500, 750, 1000, 1300,
+  1700, 2100, 2600, 3200, 3900,
+  4700, 5700, 6800, 8100, 10000
+];
+
+function loreThreshold(index) {
+  return LORE_THRESHOLDS[index] ?? 99999;
+}
+
+function loreUnlockedCount() {
+  return RYNA_LORE.filter((_, i) => chatCount >= loreThreshold(i)).length;
+}
+
 let allQuestionBank = loadQuestionList(STORAGE_KEYS.all);
 let wrongQuestionBank = loadQuestionList(STORAGE_KEYS.wrong);
 
@@ -471,13 +605,17 @@ function loadAppState() {
     chatHistory = Array.isArray(parsed.chatHistory)
       ? parsed.chatHistory.filter(h => h && (h.role === 'user' || h.role === 'model') && Array.isArray(h.parts))
       : [];
+    chatRewardLog = Array.isArray(parsed.chatRewardLog) ? parsed.chatRewardLog.filter(e => e && e.type) : [];
     chatEmotion = normalizeChatEmotion(parsed.chatEmotion);
+    chatCount = asCount(parsed.chatCount);
     currentLevel = LEVELS[parsed.currentLevel] ? parsed.currentLevel : 'standard';
   } catch(e) {
     stats = { total: 0, correct: 0, sets: 0 };
     chatTokens = 0;
     chatHistory = [];
+    chatRewardLog = [];
     chatEmotion = { self: '楽', user: '楽', closeness: 0 };
+    chatCount = 0;
     currentLevel = 'standard';
   }
 }
@@ -488,7 +626,9 @@ function saveAppState() {
       stats,
       chatTokens,
       chatHistory,
+      chatRewardLog,
       chatEmotion,
+      chatCount,
       currentLevel
     }));
   } catch(e) {
@@ -1097,6 +1237,51 @@ function showVocabList(mode) {
   show('s-vocab-list');
 }
 
+function openLore() {
+  const list = document.getElementById('lore-list');
+  list.textContent = '';
+
+  RYNA_LORE.forEach((entry, i) => {
+    const need = loreThreshold(i);
+    const isOpen = chatCount >= need;
+
+    const item = document.createElement('div');
+    item.className = `lore-item ${isOpen ? 'open' : 'locked'}`;
+
+    const head = document.createElement('div');
+    head.className = 'lore-head';
+
+    const no = document.createElement('span');
+    no.className = 'lore-no';
+    no.textContent = `No.${String(i + 1).padStart(2, '0')}`;
+
+    const title = document.createElement('span');
+    title.className = 'lore-title';
+    title.textContent = isOpen ? entry.title : '？？？？？？';
+
+    head.appendChild(no);
+    head.appendChild(title);
+
+    const body = document.createElement('div');
+    body.className = 'lore-body';
+    if (isOpen) {
+      body.textContent = entry.body;
+    } else {
+      const remain = Math.max(0, need - chatCount);
+      body.textContent = `🔒 らいなと ${need}回 話すと解放（あと${remain}回）`;
+    }
+
+    item.appendChild(head);
+    item.appendChild(body);
+    list.appendChild(item);
+  });
+
+  const unlocked = loreUnlockedCount();
+  document.getElementById('lore-count').textContent = `${unlocked} / ${RYNA_LORE.length} 解放`;
+  document.getElementById('lore-sub').textContent = `これまでに らいなと ${chatCount}回 話した`;
+  show('s-lore');
+}
+
 function exportQuestions(kind) {
   const list = kind === 'wrong' ? wrongQuestionBank : allQuestionBank;
   if (list.length === 0) {
@@ -1135,6 +1320,40 @@ function exportQuestions(kind) {
   const a = document.createElement('a');
   a.href = url;
   a.download = `english-master-${kind}-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportChatExperiment() {
+  const payload = {
+    schemaVersion: 1,
+    app: 'english-master',
+    kind: 'chat-reward-experiment',
+    exportedAt: new Date().toISOString(),
+    summary: {
+      totalAnswered: stats.total,
+      totalCorrect: stats.correct,
+      completedSets: stats.sets,
+      remainingChatTokens: chatTokens,
+      chatTurns: chatHistory.filter(h => h.role === 'user').length,
+      rewardEvents: chatRewardLog.length
+    },
+    chatHistory: chatHistory.map((h, index) => ({
+      index,
+      role: h.role,
+      text: h.parts?.[0]?.text || '',
+      at: h.at || null,
+      emotion: h.emotion || null,
+      stats: h.stats || null,
+      tokensAfter: Number.isInteger(h.tokensAfter) ? h.tokensAfter : null
+    })),
+    rewardLog: chatRewardLog
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `english-master-chat-experiment-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -1222,6 +1441,7 @@ function updateStats() {
   document.getElementById('phrase-list-btn').textContent = `熟語一覧 (${buildVocabEntries('phrase').length})`;
   document.getElementById('review-desc').textContent = `間違えた問題 ${wrongQuestionBank.length}問`;
   document.getElementById('chat-desc').textContent = `${CHAT_UNLOCK_INTERVAL}問クリアするごとに1回話せる`;
+  document.getElementById('lore-desc').textContent = `${loreUnlockedCount()} / ${RYNA_LORE.length} 解放`;
   document.getElementById('review-card').classList.toggle('disabled', wrongQuestionBank.length === 0);
   document.getElementById('chat-card').style.borderColor = chatTokens > 0 ? 'var(--accent)' : 'var(--border)';
 }
@@ -1421,6 +1641,19 @@ function showResult() {
   const unlockedChats = Math.floor(questions.length / CHAT_UNLOCK_INTERVAL);
   const grantsChat = unlockedChats > 0;
   if (grantsChat) chatTokens += unlockedChats;
+  if (grantsChat) {
+    chatRewardLog.push({
+      type: 'reward_unlocked',
+      at: new Date().toISOString(),
+      mode: currentMode,
+      level: currentLevel,
+      score,
+      total: questions.length,
+      unlockedChats,
+      chatTokensAfter: chatTokens,
+      stats: { ...stats }
+    });
+  }
   const pct = score / questions.length;
   const emoji = pct >= 0.9 ? '🏆' : pct >= 0.7 ? '🎉' : pct >= 0.5 ? '😊' : '💪';
   const msgs = {
@@ -1544,10 +1777,24 @@ async function sendChat() {
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
   if (!text) return;
+  const sentAt = new Date().toISOString();
   input.value = '';
   chatTokens--;
   addMsg('user', text);
-  chatHistory.push({ role: 'user', parts: [{ text }] });
+  chatHistory.push({
+    role: 'user',
+    parts: [{ text }],
+    at: sentAt,
+    tokensAfter: chatTokens,
+    stats: { ...stats }
+  });
+  chatRewardLog.push({
+    type: 'chat_token_spent',
+    at: sentAt,
+    textLength: text.length,
+    chatTokensAfter: chatTokens,
+    stats: { ...stats }
+  });
   updateChatUI();
 
   document.getElementById('send-btn').disabled = true;
@@ -1574,10 +1821,25 @@ async function sendChat() {
     if (data.error) throw new Error(data.error.message);
     const reply = data.candidates[0].content.parts[0].text.trim();
     typing.textContent = reply;
-    chatHistory.push({ role: 'model', parts: [{ text: reply }] });
+    chatCount++;
+    chatHistory.push({
+      role: 'model',
+      parts: [{ text: reply }],
+      at: new Date().toISOString(),
+      emotion: { ...chatEmotion },
+      tokensAfter: chatTokens,
+      stats: { ...stats }
+    });
   } catch(e) {
     typing.textContent = 'エラーが発生しました…もう一度試してね。';
     chatTokens++; // refund
+    chatRewardLog.push({
+      type: 'chat_token_refunded',
+      at: new Date().toISOString(),
+      reason: 'api_error',
+      chatTokensAfter: chatTokens,
+      stats: { ...stats }
+    });
     updateChatUI();
   }
 
