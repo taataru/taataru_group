@@ -201,6 +201,13 @@
       color: var(--ink);
     }
 
+    .ta-key {
+      min-height: 44px;
+      background: #eef7ff;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
     .hint {
       margin-top: -8px;
       color: var(--muted);
@@ -338,6 +345,7 @@
           <div class="actions">
             <button id="encodeBtn" type="button">Encode</button>
             <button id="copyBtn" class="secondary" type="button">Copy</button>
+            <button id="copyTaKeyBtn" class="secondary" type="button">Copy ta key</button>
             <button id="clearBtn" class="secondary" type="button">Clear</button>
           </div>
         </div>
@@ -351,6 +359,7 @@
           <div class="metric"><span>length</span><strong id="mLength">0</strong></div>
         </div>
 
+        <pre id="taKey" class="ta-key"></pre>
         <pre id="result"></pre>
         <pre id="blocks" class="blocks"></pre>
       </section>
@@ -363,7 +372,7 @@
         <div class="step"><b>2. Rounds</b><span>回す回数を決めます。復元時は restore の値を使います。</span></div>
         <div class="step"><b>3. Dummy</b><span><code>1t2a30t</code> の形で混ぜる位置を指定します。</span></div>
         <div class="step"><b>4. Encode</b><span>暗号化済みの ta 文字列を作ります。</span></div>
-        <div class="step"><b>5. Memo</b><span>復元回数、ダミー指定、key_length を別の場所に保管します。</span></div>
+        <div class="step"><b>5. Ta key</b><span><code>dummy/restore_rounds/key_length</code> をコピーして保管します。</span></div>
       </div>
 
       <div class="notes">
@@ -381,7 +390,7 @@
         </div>
         <div class="note">
           <b>公開するときの注意</b><br>
-          GitHubに置くのは ta 文字列だけにして、<code>restore_rounds</code>、<code>dummy</code>、<code>key_length</code> は同じ場所に置かないでください。
+          GitHubに置くのは ta 文字列だけにして、<code>dummy/restore_rounds/key_length</code> の ta key は同じ場所に置かないでください。
         </div>
       </div>
     </section>
@@ -586,15 +595,19 @@
       const blocks = chunks.map((chunk) => encodeChunkToBlock(chunk, normalizedRounds));
       const plainTa = blocksToTa(blocks);
       const ta = insertDummyLetters(plainTa, dummy);
+      const restoreRounds = (PERIOD - normalizedRounds) % PERIOD;
+      const taKey = `${dummy}/${restoreRounds}/${apiKey.length}`;
 
+      $("taKey").textContent = taKey;
       $("result").textContent = wrapText(ta, width);
       $("blocks").textContent = [
+        `ta_key_for_app: ${taKey}`,
         `key_length: ${apiKey.length}`,
         `chunk_lengths: ${chunks.map((chunk) => chunk.length).join(",")}`,
         ...blocks,
       ].join("\n");
       $("mRounds").textContent = String(normalizedRounds);
-      $("mRestore").textContent = String((PERIOD - normalizedRounds) % PERIOD);
+      $("mRestore").textContent = String(restoreRounds);
       $("mChunks").textContent = String(chunks.length);
       $("mLength").textContent = String(ta.length);
       $("status").textContent = "encoded";
@@ -618,9 +631,18 @@
       $("status").className = "status";
     });
 
+    $("copyTaKeyBtn").addEventListener("click", async () => {
+      const text = $("taKey").textContent;
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+      $("status").textContent = "ta key copied";
+      $("status").className = "status";
+    });
+
     $("clearBtn").addEventListener("click", () => {
       $("apiKey").value = "";
       $("dummy").value = "";
+      $("taKey").textContent = "";
       $("result").textContent = "";
       $("blocks").textContent = "";
       $("mRounds").textContent = "0";
