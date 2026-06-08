@@ -313,6 +313,12 @@
             <input id="removeSpec" spellcheck="false" autocomplete="off" placeholder="1t2a30t105a">
           </label>
 
+          <label>
+            Ta key for app
+            <input id="taKey" spellcheck="false" autocomplete="off" placeholder="1t2a30t105a/999761/39">
+          </label>
+          <div class="hint">入力すると Dummy / Restore rounds / Key length として使います。</div>
+
           <div class="row">
             <label>
               Restore rounds
@@ -357,9 +363,9 @@
       <h2>使い方</h2>
       <div class="flow" aria-label="復号の流れ">
         <div class="step"><b>1. Encrypted ta</b><span>公開側に置いた ta 文字列を貼ります。改行はそのままでOKです。</span></div>
-        <div class="step"><b>2. Dummy</b><span>暗号化時のダミー指定を入力します。</span></div>
-        <div class="step"><b>3. Rounds</b><span>暗号化時に出た restore_rounds を入力します。</span></div>
-        <div class="step"><b>4. Key length</b><span>暗号化時に出た key_length を入力します。</span></div>
+        <div class="step"><b>2. Ta key</b><span><code>dummy/restore_rounds/key_length</code> を貼ると3項目をまとめて使えます。</span></div>
+        <div class="step"><b>3. Dummy</b><span>個別入力したい場合は暗号化時のダミー指定を入力します。</span></div>
+        <div class="step"><b>4. Rounds / Length</b><span>個別入力したい場合は restore_rounds と key_length を入力します。</span></div>
         <div class="step"><b>5. Decode</b><span>ダミーを外して、元のAPIキーに戻します。</span></div>
       </div>
 
@@ -378,7 +384,7 @@
         </div>
         <div class="note">
           <b>保管のコツ</b><br>
-          <code>ta本体</code> と <code>restore_rounds / dummy / key_length</code> は別々に保管します。同じGitリポジトリにまとめない運用が前提です。
+          <code>ta本体</code> と <code>dummy/restore_rounds/key_length</code> の ta key は別々に保管します。同じGitリポジトリにまとめない運用が前提です。
         </div>
       </div>
     </section>
@@ -588,6 +594,35 @@
       return lengths;
     }
 
+    function parseTaKeyForApp(value) {
+      const clean = value.trim();
+      if (!clean) return null;
+      const parts = clean.split("/").map((part) => part.trim());
+      if (parts.length !== 3) {
+        throw new Error("Ta key for app は dummy/restore_rounds/key_length の形式で入力してください");
+      }
+      const removeSpec = parts[0];
+      const restoreRounds = Number(parts[1]);
+      const keyLength = Number(parts[2]);
+      parsePositionSpec(removeSpec);
+      if (!Number.isInteger(restoreRounds) || restoreRounds < 0) {
+        throw new Error("Ta key の restore_rounds は0以上の整数にしてください");
+      }
+      if (!Number.isInteger(keyLength) || keyLength < 1) {
+        throw new Error("Ta key の key_length は1以上の整数にしてください");
+      }
+      return { removeSpec, restoreRounds, keyLength };
+    }
+
+    function applyTaKeyForApp() {
+      const parsed = parseTaKeyForApp($("taKey").value);
+      if (!parsed) return null;
+      $("removeSpec").value = parsed.removeSpec;
+      $("restoreRounds").value = String(parsed.restoreRounds);
+      $("keyLength").value = String(parsed.keyLength);
+      return parsed;
+    }
+
     function digitsToText(digits, charCount) {
       const needed = digits.slice(0, charCount * 2);
       let text = "";
@@ -603,8 +638,9 @@
 
     function decode() {
       const encrypted = $("encrypted").value;
-      const removeSpec = $("removeSpec").value.trim();
-      const restoreRounds = Number($("restoreRounds").value);
+      const taKey = applyTaKeyForApp();
+      const removeSpec = taKey ? taKey.removeSpec : $("removeSpec").value.trim();
+      const restoreRounds = taKey ? taKey.restoreRounds : Number($("restoreRounds").value);
       if (!Number.isInteger(restoreRounds) || restoreRounds < 0) {
         throw new Error("復元回数は0以上の整数にしてください");
       }
@@ -613,7 +649,8 @@
       const removed = removeDummyLetters(cleanInput, removeSpec);
       const payloadDigits = taToDigits(removed.text);
       const chunkCount = payloadDigits.length / PAYLOAD_DIGITS;
-      const chunkLengths = parseChunkLengths($("chunkLengths").value, chunkCount, $("keyLength").value);
+      const keyLengthText = taKey ? String(taKey.keyLength) : $("keyLength").value;
+      const chunkLengths = parseChunkLengths($("chunkLengths").value, chunkCount, keyLengthText);
 
       const decodedChunks = [];
       const detailLines = [];
@@ -646,6 +683,14 @@
       }
     });
 
+    $("taKey").addEventListener("input", () => {
+      try {
+        applyTaKeyForApp();
+      } catch (error) {
+        // Let Decode show the validation message once the user commits.
+      }
+    });
+
     $("copyBtn").addEventListener("click", async () => {
       const text = $("apiKey").textContent;
       if (!text) return;
@@ -657,6 +702,7 @@
       $("clearBtn").addEventListener("click", () => {
       $("encrypted").value = "";
       $("removeSpec").value = "";
+      $("taKey").value = "";
       $("keyLength").value = "";
       $("chunkLengths").value = "";
       $("apiKey").textContent = "";
