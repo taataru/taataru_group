@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>英語学習アプリ</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card2: #273549;
+    --accent: #6366f1;
+    --accent2: #818cf8;
+    --green: #22c55e;
+    --red: #ef4444;
+    --text: #f1f5f9;
+    --sub: #94a3b8;
+    --border: #334155;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+
+  /* ===== SCREENS ===== */
+  .screen { display: none; min-height: 100vh; padding: 20px; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  /* ===== API KEY SCREEN ===== */
+  #s-apikey { justify-content: center; }
+  .api-box { background: var(--card); border-radius: 20px; padding: 40px; max-width: 460px; width: 100%; text-align: center; border: 1px solid var(--border); }
+  .api-box h1 { font-size: 1.8rem; margin-bottom: 8px; }
+  .api-box p { color: var(--sub); margin-bottom: 28px; font-size: 0.95rem; }
+  .api-box input { width: 100%; padding: 14px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 0.95rem; margin-bottom: 16px; outline: none; }
+  .api-box textarea { width: 100%; min-height: 82px; resize: vertical; padding: 14px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 0.9rem; margin-bottom: 16px; outline: none; }
+  .api-box input:focus { border-color: var(--accent); }
+  .api-box textarea:focus { border-color: var(--accent); }
+  .api-divider { display: flex; align-items: center; gap: 10px; color: var(--sub); font-size: 0.75rem; margin: 2px 0 16px; }
+  .api-divider::before, .api-divider::after { content: ""; height: 1px; flex: 1; background: var(--border); }
+
+  /* ===== TOP SCREEN ===== */
+  #s-top { justify-content: flex-start; padding-top: 40px; }
+  .top-header { text-align: center; margin-bottom: 40px; }
+  .top-header h1 { font-size: 2rem; background: linear-gradient(135deg, var(--accent2), #a5b4fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .top-header p { color: var(--sub); margin-top: 6px; }
+  .mode-cards { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 400px; }
+  .mode-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 28px 24px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 20px; }
+  .mode-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 30px rgba(99,102,241,0.2); }
+  .mode-icon { font-size: 2.2rem; width: 56px; height: 56px; background: var(--card2); border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .mode-info h3 { font-size: 1.1rem; margin-bottom: 4px; }
+  .mode-info p { color: var(--sub); font-size: 0.85rem; }
+  .score-bar { margin-top: 32px; background: var(--card); border-radius: 14px; padding: 16px 20px; width: 100%; max-width: 400px; border: 1px solid var(--border); }
+  .score-bar p { color: var(--sub); font-size: 0.85rem; margin-bottom: 8px; }
+  .score-items { display: flex; flex-wrap: wrap; gap: 16px; }
+  .score-item { text-align: center; min-width: 54px; flex: 1; }
+  .score-item .num { font-size: 1.4rem; font-weight: 700; color: var(--accent2); }
+  .score-item .lbl { font-size: 0.75rem; color: var(--sub); }
+  .mode-card.disabled { opacity: 0.55; cursor: default; }
+  .mode-card.disabled:hover { border-color: var(--border); transform: none; box-shadow: none; }
+  .level-panel { width: 100%; max-width: 400px; margin: -20px 0 18px; }
+  .level-title { color: var(--sub); font-size: 0.8rem; margin-bottom: 8px; }
+  .level-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .level-btn { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 8px; color: var(--sub); font-size: 0.82rem; cursor: pointer; }
+  .level-btn:hover { border-color: var(--accent); color: var(--text); }
+  .level-btn.active { background: rgba(99,102,241,0.18); border-color: var(--accent); color: var(--accent2); font-weight: 700; }
+  .data-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+  .data-btn { background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 8px; color: var(--text); font-size: 0.8rem; cursor: pointer; }
+  .data-btn:hover { border-color: var(--accent); }
+
+  /* ===== VOCAB LIST SCREEN ===== */
+  #s-vocab-list { justify-content: flex-start; padding-top: 24px; }
+  .list-topbar { width: 100%; max-width: 720px; display: flex; align-items: center; gap: 12px; padding: 0 0 16px; border-bottom: 1px solid var(--border); }
+  .list-topbar .back-btn { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px; cursor: pointer; color: var(--sub); font-size: 0.85rem; }
+  .list-topbar .back-btn:hover { color: var(--text); border-color: var(--accent); }
+  .list-topbar h2 { font-size: 1rem; }
+  .list-count { margin-left: auto; color: var(--sub); font-size: 0.8rem; }
+  .vocab-list { width: 100%; max-width: 720px; display: flex; flex-direction: column; gap: 10px; padding: 18px 0 32px; }
+  .vocab-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; }
+  .vocab-main { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .vocab-term { font-size: 1.05rem; font-weight: 700; overflow-wrap: anywhere; }
+  .vocab-meta { color: var(--sub); font-size: 0.76rem; white-space: nowrap; }
+  .vocab-meanings { display: flex; flex-wrap: wrap; gap: 7px; }
+  .meaning-pill { background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.28); color: #bbf7d0; border-radius: 999px; padding: 5px 9px; font-size: 0.82rem; line-height: 1.2; overflow-wrap: anywhere; }
+  .empty-list { width: 100%; max-width: 720px; color: var(--sub); text-align: center; padding: 56px 16px; }
+
+  /* ===== QUIZ SCREEN ===== */
+  #s-quiz { justify-content: flex-start; padding-top: 24px; }
+  .quiz-header { width: 100%; max-width: 560px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .quiz-header .back-btn { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px; cursor: pointer; color: var(--sub); font-size: 0.85rem; }
+  .quiz-header .back-btn:hover { color: var(--text); }
+  .quiz-progress { text-align: right; }
+  .quiz-progress .qnum { font-size: 0.85rem; color: var(--sub); }
+  .progress-bar { width: 120px; height: 6px; background: var(--card2); border-radius: 99px; margin-top: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 99px; transition: width 0.4s; }
+  .quiz-mode-badge { font-size: 0.75rem; color: var(--accent2); background: rgba(99,102,241,0.15); padding: 4px 12px; border-radius: 99px; }
+
+  .question-card { background: var(--card); border: 1px solid var(--border); border-radius: 22px; padding: 40px 32px; width: 100%; max-width: 560px; text-align: center; margin-bottom: 24px; min-height: 180px; display: flex; align-items: center; justify-content: center; }
+  .question-word { font-size: 2.2rem; font-weight: 700; letter-spacing: 2px; }
+  .question-sentence { font-size: 1.15rem; line-height: 1.8; }
+  .blank { display: inline-block; background: rgba(99,102,241,0.2); border-bottom: 2px solid var(--accent2); padding: 0 8px; border-radius: 4px; min-width: 80px; color: var(--accent2); font-weight: 600; }
+
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 560px; }
+  .choice-btn { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 16px; cursor: pointer; font-size: 0.95rem; color: var(--text); transition: all 0.15s; text-align: center; }
+  .choice-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--card2); }
+  .choice-btn.correct { border-color: var(--green); background: rgba(34,197,94,0.15); color: var(--green); }
+  .choice-btn.wrong { border-color: var(--red); background: rgba(239,68,68,0.1); color: var(--red); }
+  .choice-btn:disabled { cursor: default; }
+
+  .feedback { margin-top: 16px; font-size: 0.95rem; height: 24px; }
+  .feedback.ok { color: var(--green); }
+  .feedback.ng { color: var(--red); }
+
+  .next-btn { margin-top: 20px; padding: 14px 40px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 14px; color: #fff; font-size: 1rem; font-weight: 600; cursor: pointer; display: none; }
+  .next-btn:hover { opacity: 0.9; }
+
+  .loading-q { text-align: center; color: var(--sub); padding: 60px 0; }
+  .loading-q .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== RESULT SCREEN ===== */
+  #s-result { justify-content: center; }
+  .result-box { background: var(--card); border: 1px solid var(--border); border-radius: 22px; padding: 40px 32px; max-width: 460px; width: 100%; text-align: center; }
+  .result-emoji { font-size: 3.5rem; margin-bottom: 12px; }
+  .result-box h2 { font-size: 1.6rem; margin-bottom: 8px; }
+  .result-score { font-size: 3rem; font-weight: 800; color: var(--accent2); margin: 16px 0; }
+  .result-score span { font-size: 1.2rem; color: var(--sub); }
+  .result-msg { color: var(--sub); margin-bottom: 28px; }
+  .result-btns { display: flex; flex-direction: column; gap: 12px; }
+  .chat-unlock { background: linear-gradient(135deg, #f59e0b, #fbbf24); border: none; border-radius: 14px; padding: 16px; color: #1c1917; font-weight: 700; font-size: 1rem; cursor: pointer; }
+  .chat-unlock:hover { opacity: 0.9; }
+  .retry-btn { background: var(--card2); border: 1px solid var(--border); border-radius: 14px; padding: 14px; color: var(--text); font-size: 0.95rem; cursor: pointer; }
+  .retry-btn:hover { border-color: var(--accent); }
+  .chat-locked { font-size: 0.85rem; color: var(--sub); margin-top: 8px; }
+
+  /* ===== CHAT SCREEN ===== */
+  #s-chat { justify-content: flex-start; padding-top: 0; }
+  .chat-topbar { width: 100%; max-width: 600px; display: flex; align-items: center; gap: 12px; padding: 20px 0 16px; border-bottom: 1px solid var(--border); }
+  .chat-topbar .back-btn { background: none; border: none; color: var(--sub); cursor: pointer; font-size: 1.1rem; padding: 4px 8px; }
+  .chat-topbar h2 { font-size: 1rem; }
+  .chat-topbar .badge { font-size: 0.75rem; background: rgba(251,191,36,0.15); color: #fbbf24; padding: 3px 10px; border-radius: 99px; margin-left: auto; }
+  .chat-messages { flex: 1; width: 100%; max-width: 600px; overflow-y: auto; padding: 20px 0; display: flex; flex-direction: column; gap: 14px; max-height: calc(100vh - 180px); }
+  .msg { max-width: 75%; padding: 12px 16px; border-radius: 16px; font-size: 0.95rem; line-height: 1.6; }
+  .msg.ai { background: var(--card); border: 1px solid var(--border); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg.user { background: linear-gradient(135deg, var(--accent), var(--accent2)); align-self: flex-end; border-bottom-right-radius: 4px; }
+  .chat-input-area { width: 100%; max-width: 600px; display: flex; gap: 10px; padding: 16px 0 20px; border-top: 1px solid var(--border); }
+  .chat-input-area input { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px; color: var(--text); font-size: 0.95rem; outline: none; }
+  .chat-input-area input:focus { border-color: var(--accent); }
+  .chat-input-area input:disabled { opacity: 0.5; }
+  .send-btn { background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 12px; padding: 12px 20px; color: #fff; cursor: pointer; font-size: 1rem; }
+  .send-btn:disabled { opacity: 0.4; cursor: default; }
+  .tokens-left { font-size: 0.8rem; color: var(--sub); text-align: center; margin-top: 4px; }
+
+  /* ===== BUTTON BASE ===== */
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 14px; padding: 14px 32px; color: #fff; font-size: 1rem; font-weight: 600; cursor: pointer; width: 100%; }
+  .btn-primary:hover { opacity: 0.9; }
+
+  .error-msg { color: var(--red); font-size: 0.85rem; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<!-- API KEY SCREEN -->
+<div id="s-apikey" class="screen active">
+  <div class="api-box">
+    <h1>🎓 英語マスター</h1>
+    <p>高校生向け英語学習アプリ<br>Gemini APIキーを入力して始めましょう</p>
+    <input type="password" id="api-input" placeholder="通常APIキー（AIza...）" />
+    <div class="api-divider">または</div>
+    <textarea id="encrypted-api-input" placeholder="Encrypted ta（t/a文字列）"></textarea>
+    <input type="text" id="ta-input" placeholder="dummy/restore_rounds/key_length（例: 2t4a5t6a/50023/29）" />
+    <div id="api-error" class="error-msg"></div>
+    <button class="btn-primary" onclick="saveApiKey()">スタート →</button>
+    <p style="margin-top:16px;font-size:0.75rem;color:var(--sub)">APIキーと学習データはこのブラウザに保存されます</p>
+  </div>
+</div>
+
+<!-- TOP SCREEN -->
+<div id="s-top" class="screen">
+  <div class="top-header">
+    <h1>🎓 英語マスター</h1>
+    <p>今日もがんばろう！</p>
+  </div>
+  <div class="level-panel">
+    <div class="level-title">レベル</div>
+    <div class="level-options" id="level-options">
+      <button class="level-btn" data-level="junior" onclick="setLevel('junior')">中学復習</button>
+      <button class="level-btn" data-level="basic" onclick="setLevel('basic')">高1基礎</button>
+      <button class="level-btn" data-level="standard" onclick="setLevel('standard')">高校標準</button>
+      <button class="level-btn" data-level="exam" onclick="setLevel('exam')">大学受験</button>
+    </div>
+  </div>
+  <div class="mode-cards">
+    <div class="mode-card" onclick="startMode('word')">
+      <div class="mode-icon">📖</div>
+      <div class="mode-info">
+        <h3>単語編</h3>
+        <p>英単語の意味を4択で答えよう</p>
+      </div>
+    </div>
+    <div class="mode-card" onclick="startMode('phrase')">
+      <div class="mode-icon">💬</div>
+      <div class="mode-info">
+        <h3>熟語編</h3>
+        <p>英熟語・イディオムをマスター</p>
+      </div>
+    </div>
+    <div class="mode-card" onclick="startMode('grammar')">
+      <div class="mode-icon">✏️</div>
+      <div class="mode-info">
+        <h3>文法編</h3>
+        <p>虫食い問題で文法力を鍛えよう</p>
+      </div>
+    </div>
+    <div class="mode-card" id="review-card" onclick="startWrongReview()">
+      <div class="mode-icon">🔁</div>
+      <div class="mode-info">
+        <h3>復習編</h3>
+        <p id="review-desc">間違えた問題 0問</p>
+      </div>
+    </div>
+    <div class="mode-card" id="chat-card" onclick="goChat()">
+      <div class="mode-icon">🤖</div>
+      <div class="mode-info">
+        <h3>AIチャット</h3>
+        <p id="chat-desc">10問クリアするごとに1回話せる</p>
+      </div>
+    </div>
+  </div>
+  <div class="score-bar">
+    <p>📊 今日の成績</p>
+    <div class="score-items">
+      <div class="score-item"><div class="num" id="stat-total">0</div><div class="lbl">問</div></div>
+      <div class="score-item"><div class="num" id="stat-correct">0</div><div class="lbl">正解</div></div>
+      <div class="score-item"><div class="num" id="stat-sets">0</div><div class="lbl">セット完了</div></div>
+      <div class="score-item"><div class="num" id="stat-tokens" style="color:#fbbf24">0</div><div class="lbl">チャット残</div></div>
+      <div class="score-item"><div class="num" id="stat-saved">0</div><div class="lbl">保存問題</div></div>
+      <div class="score-item"><div class="num" id="stat-wrong" style="color:#f87171">0</div><div class="lbl">復習待ち</div></div>
+    </div>
+    <div class="data-actions">
+      <button class="data-btn" onclick="showVocabList('word')" id="word-list-btn">単語一覧</button>
+      <button class="data-btn" onclick="showVocabList('phrase')" id="phrase-list-btn">熟語一覧</button>
+      <button class="data-btn" onclick="exportQuestions('all')">全問題JSON</button>
+      <button class="data-btn" onclick="exportQuestions('wrong')">ミスJSON</button>
+      <button class="data-btn" onclick="changeApiKey()">API変更</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ SCREEN -->
+<div id="s-quiz" class="screen">
+  <div class="quiz-header">
+    <button class="back-btn" onclick="goTop()">← 戻る</button>
+    <div class="quiz-mode-badge" id="quiz-mode-badge">単語編</div>
+    <div class="quiz-progress">
+      <div class="qnum" id="q-num">1 / 20</div>
+      <div class="progress-bar"><div class="progress-fill" id="q-progress" style="width:5%"></div></div>
+    </div>
+  </div>
+
+  <div id="loading-area" class="loading-q">
+    <div class="spinner"></div>
+    <p>問題を生成中…</p>
+  </div>
+
+  <div id="quiz-area" style="display:none; width:100%; max-width:560px; display:none; flex-direction:column; align-items:center;">
+    <div class="question-card">
+      <div id="q-text"></div>
+    </div>
+    <div class="choices" id="choices"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="next-btn" onclick="nextQuestion()">次の問題 →</button>
+  </div>
+</div>
+
+<!-- RESULT SCREEN -->
+<div id="s-result" class="screen">
+  <div class="result-box">
+    <div class="result-emoji" id="res-emoji">🎉</div>
+    <h2 id="res-title">お疲れ様！</h2>
+    <div class="result-score"><span id="res-score">0</span><span> / </span><span id="res-total">20</span></div>
+    <p class="result-msg" id="res-msg">よくがんばりました！</p>
+    <div class="result-btns">
+      <button class="chat-unlock" id="chat-btn" onclick="goChat()">🤖 AIに話しかける</button>
+      <p class="chat-locked" id="chat-locked-msg"></p>
+      <button class="retry-btn" onclick="retryMode()">もう一度チャレンジ</button>
+      <button class="retry-btn" onclick="goTop()">カテゴリ選択に戻る</button>
+    </div>
+  </div>
+</div>
+
+<!-- VOCAB LIST SCREEN -->
+<div id="s-vocab-list" class="screen">
+  <div class="list-topbar">
+    <button class="back-btn" onclick="goTop()">← 戻る</button>
+    <h2 id="list-title">単語一覧</h2>
+    <div class="list-count" id="list-count">0項目</div>
+  </div>
+  <div class="vocab-list" id="vocab-list"></div>
+  <div class="empty-list" id="vocab-empty" style="display:none">まだ表示できる項目がありません</div>
+</div>
+
+<!-- CHAT SCREEN -->
+<div id="s-chat" class="screen">
+  <div class="chat-topbar" style="max-width:600px;width:100%">
+    <button class="back-btn" onclick="goTop()">←</button>
+    <h2>🤖 AIコーチ</h2>
+    <div class="badge" id="chat-badge">残り0回</div>
+  </div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div style="width:100%;max-width:600px">
+    <div class="chat-input-area">
+      <input type="text" id="chat-input" placeholder="メッセージを入力…" onkeydown="if(event.key==='Enter')sendChat()" />
+      <button class="send-btn" id="send-btn" onclick="sendChat()">↑</button>
+    </div>
+    <div class="tokens-left" id="tokens-left"></div>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+let apiKey = '';
+let currentMode = 'word';
+let currentLevel = 'standard';
+let questions = [];
+let qIndex = 0;
+let score = 0;
+let stats = { total: 0, correct: 0, sets: 0 };
+let chatTokens = 0;
+let chatHistory = [];
+let chatEmotion = { self: '楽', user: '楽', closeness: 0 };
+let answered = false;
+
+const GEMINI_MODEL = 'gemini-2.5-flash-lite';
+const QUIZ_SIZE = 20;
+const CHAT_UNLOCK_INTERVAL = 10;
+const DEFAULT_ENCRYPTED_TA = `ttttataataaataaaaataaataaattaa
+attaatatataaataaaaaaaaattaaaaa
+taaaattaattaaaaaaaattaattaaatt
+aataaaaataaaaaaaaaaaataaaaattt
+taaattaaaaattaaattaaataaattaat
+aaaaaaataattaaattaataaaaaaataa
+aaaaaaataaaattaaattaaaaaaaaaaa
+taaaaaaaaataaaaataaaatataaaaat
+aaaataatataataaataattataataaaa
+aaatattaatttaaattaaattaaataaaa
+aataaaaaaaaatataaataaatataaaaa
+aaataaaatataattataattaaaaaaata
+aataaaattaattaaaataaatttaaattt
+aattaaataaaaaaaaataaaattaaattt
+aaattaataaaattaatatataaaaataaa
+aaaaataaaaatataaaataaataaaaaaa
+aaattaaaataaattaaattaaattaaata
+aaattataattaaattaaaataaaatataa
+aaataaataaaaaaaaaaattaaattaaat
+taaaaataaaaaaaaataaaaaaaaaaatt
+taaataaattaattaaattaaataataaaa
+aaaattaatataaaaatataaaataaatta
+aataaaattaatataaaataataaaataaa
+aaaataatataaataaaataataaaaaaaa
+ttaaataattaataaaaaaatattaaatta
+aaataattaatataaattaaaaataattaa
+attaaataaaataaataaaatataaattaa
+taaaaaaattaaataaaattaaaaaattaa
+aaataataatataattaatataaattaaaa
+taattaaaat`;
+const STORAGE_KEYS = {
+  apiKey: 'englishMaster.apiKey.v1',
+  encryptedApiKey: 'englishMaster.encryptedApiKey.v1',
+  taMeta: 'englishMaster.taMeta.v1',
+  state: 'englishMaster.state.v1',
+  all: 'englishMaster.allQuestions.v1',
+  wrong: 'englishMaster.wrongQuestions.v1'
+};
+const modeLabel = { word:'単語編', phrase:'熟語編', grammar:'文法編', review:'復習編' };
+const LEVELS = {
+  junior: {
+    label: '中学復習',
+    prompt: '中学英語の復習レベル。基本単語、基本熟語、be動詞・一般動詞・時制・比較・不定詞などを中心にしてください。'
+  },
+  basic: {
+    label: '高1基礎',
+    prompt: '高校1年生の基礎レベル。定期テストで出やすい単語・熟語・文法を中心に、難しすぎる語彙は避けてください。'
+  },
+  standard: {
+    label: '高校標準',
+    prompt: '高校生の標準レベル。定期テストから共通テスト基礎までで出やすい単語・熟語・文法を中心にしてください。'
+  },
+  exam: {
+    label: '大学受験',
+    prompt: '大学受験標準レベル。共通テストから一般入試で出やすい語彙・熟語・文法を中心に、やや抽象的な語も含めてください。'
+  }
+};
+let allQuestionBank = loadQuestionList(STORAGE_KEYS.all);
+let wrongQuestionBank = loadQuestionList(STORAGE_KEYS.wrong);
+
+// ===== SCREENS =====
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ===== APP STORAGE =====
+function readSavedApiKey() {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.apiKey);
+  } catch(e) {
+    // Ignore storage cleanup failures.
+  }
+  return '';
+}
+
+function readSavedEncryptedApiKey() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.encryptedApiKey) || '';
+    return saved === DEFAULT_ENCRYPTED_TA ? '' : saved;
+  } catch(e) {
+    return '';
+  }
+}
+
+function readSavedTaMeta() {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.taMeta) || '';
+  } catch(e) {
+    return '';
+  }
+}
+
+function saveApiKeyToStorage() {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.apiKey);
+  } catch(e) {
+    // The decoded API key intentionally stays in memory only.
+  }
+}
+
+function saveEncryptedApiKeyToStorage(key) {
+  try {
+    if (key) {
+      localStorage.setItem(STORAGE_KEYS.encryptedApiKey, key);
+    }
+  } catch(e) {
+    // The decoded API key is enough to continue if encrypted storage fails.
+  }
+}
+
+function saveTaMetaToStorage(meta) {
+  try {
+    if (meta) {
+      localStorage.setItem(STORAGE_KEYS.taMeta, meta);
+    }
+  } catch(e) {
+    // The decoded API key is enough to continue if metadata storage fails.
+  }
+}
+
+function asCount(value) {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
+}
+
+function loadAppState() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEYS.state);
+    if (!saved) return;
+    const parsed = JSON.parse(saved);
+    stats = {
+      total: asCount(parsed.stats?.total),
+      correct: asCount(parsed.stats?.correct),
+      sets: asCount(parsed.stats?.sets)
+    };
+    chatTokens = asCount(parsed.chatTokens);
+    chatHistory = Array.isArray(parsed.chatHistory)
+      ? parsed.chatHistory.filter(h => h && (h.role === 'user' || h.role === 'model') && Array.isArray(h.parts))
+      : [];
+    chatEmotion = normalizeChatEmotion(parsed.chatEmotion);
+    currentLevel = LEVELS[parsed.currentLevel] ? parsed.currentLevel : 'standard';
+  } catch(e) {
+    stats = { total: 0, correct: 0, sets: 0 };
+    chatTokens = 0;
+    chatHistory = [];
+    chatEmotion = { self: '楽', user: '楽', closeness: 0 };
+    currentLevel = 'standard';
+  }
+}
+
+function saveAppState() {
+  try {
+    localStorage.setItem(STORAGE_KEYS.state, JSON.stringify({
+      stats,
+      chatTokens,
+      chatHistory,
+      chatEmotion,
+      currentLevel
+    }));
+  } catch(e) {
+    // Keep the app usable even if the browser refuses storage.
+  }
+}
+
+// ===== API KEY DECODE =====
+function isApiKeyFormat(value) {
+  return typeof value === 'string' && value.trim().startsWith('AIza') && value.trim().length >= 20;
+}
+
+function bytesToText(bytes) {
+  return new TextDecoder().decode(bytes).trim();
+}
+
+function base64ToBytes(value) {
+  const normalized = value.trim().replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized + '='.repeat((4 - normalized.length % 4) % 4);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+function parseEncryptedPayload(value) {
+  const text = value.trim();
+  if (!text) return null;
+
+  if (text.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(text);
+      const salt = parsed.salt;
+      const iv = parsed.iv || parsed.nonce;
+      const cipher = parsed.cipher || parsed.ciphertext || parsed.data;
+      if (salt && iv && cipher) return { salt, iv, cipher };
+    } catch(e) {
+      return null;
+    }
+  }
+
+  const clean = text.startsWith('ta1:') ? text.slice(4) : text;
+  const parts = clean.split(':');
+  if (parts.length === 3) {
+    return { salt: parts[0], iv: parts[1], cipher: parts[2] };
+  }
+  return null;
+}
+
+async function decryptAesGcm(payload, taText) {
+  const cryptoApi = globalThis.crypto;
+  if (!cryptoApi?.subtle) throw new Error('このブラウザでは暗号化APIキーの復号に対応していません');
+  const passBytes = new TextEncoder().encode(taText);
+  const baseKey = await cryptoApi.subtle.importKey('raw', passBytes, 'PBKDF2', false, ['deriveKey']);
+  const key = await cryptoApi.subtle.deriveKey(
+    { name: 'PBKDF2', salt: base64ToBytes(payload.salt), iterations: 100000, hash: 'SHA-256' },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt']
+  );
+  const plain = await cryptoApi.subtle.decrypt(
+    { name: 'AES-GCM', iv: base64ToBytes(payload.iv) },
+    key,
+    base64ToBytes(payload.cipher)
+  );
+  return bytesToText(new Uint8Array(plain));
+}
+
+function tryBase64Plain(value) {
+  try {
+    return bytesToText(base64ToBytes(value));
+  } catch(e) {
+    return '';
+  }
+}
+
+function tryXorDecode(value, taText) {
+  try {
+    const encrypted = base64ToBytes(value);
+    const key = new TextEncoder().encode(taText);
+    if (key.length === 0) return '';
+    const decoded = encrypted.map((b, i) => b ^ key[i % key.length]);
+    return bytesToText(decoded);
+  } catch(e) {
+    return '';
+  }
+}
+
+const TA_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-";
+const TA_PAYLOAD_DIGITS = 50;
+const TA_WIDTH = 10;
+const TA_HEIGHT = 5;
+const TA_PERIOD = 1000000;
+const TA_BITS_TO_DIGIT = {
+  "0": "0",
+  "10": "5",
+  "1100": "1",
+  "11010": "2",
+  "11011": "3",
+  "11100": "4",
+  "11101": "6",
+  "11110": "8",
+  "111110": "7",
+  "111111": "9"
+};
+const taMatrixCache = new Map();
+
+function parseTaMeta(value) {
+  const parts = value.trim().split('/').map(part => part.trim());
+  if (parts.length !== 3 || !parts[1] || !parts[2]) return null;
+  if (parts[0] && !/^(\d+[ta])+$/.test(parts[0])) return null;
+  const restoreRounds = Number(parts[1]);
+  const keyLength = Number(parts[2]);
+  if (!Number.isInteger(restoreRounds) || restoreRounds < 0) return null;
+  if (!Number.isInteger(keyLength) || keyLength < 1) return null;
+  return {
+    removeSpec: parts[0],
+    restoreRounds,
+    keyLength
+  };
+}
+
+function applyTaDiffRound(digits) {
+  const horiz = [digits[0]];
+  for (let i = 1; i < TA_PAYLOAD_DIGITS; i += 1) {
+    horiz.push((digits[i] - digits[i - 1] + 10) % 10);
+  }
+
+  const rows = [];
+  for (let r = 0; r < TA_HEIGHT; r += 1) {
+    rows.push(horiz.slice(r * TA_WIDTH, (r + 1) * TA_WIDTH));
+  }
+
+  const vert = [rows[0].slice()];
+  for (let r = 1; r < TA_HEIGHT; r += 1) {
+    const row = [];
+    for (let c = 0; c < TA_WIDTH; c += 1) {
+      row.push((rows[r][c] - rows[r - 1][c] + 10) % 10);
+    }
+    vert.push(row);
+  }
+  return vert.flat();
+}
+
+function buildTaRoundMatrix() {
+  const matrix = Array.from({ length: TA_PAYLOAD_DIGITS }, () => Array(TA_PAYLOAD_DIGITS).fill(0));
+  for (let col = 0; col < TA_PAYLOAD_DIGITS; col += 1) {
+    const basis = Array(TA_PAYLOAD_DIGITS).fill(0);
+    basis[col] = 1;
+    const result = applyTaDiffRound(basis);
+    for (let row = 0; row < TA_PAYLOAD_DIGITS; row += 1) {
+      matrix[row][col] = result[row] % 10;
+    }
+  }
+  return matrix;
+}
+
+function multiplyTaMatrices(left, right) {
+  const result = Array.from({ length: TA_PAYLOAD_DIGITS }, () => Array(TA_PAYLOAD_DIGITS).fill(0));
+  for (let row = 0; row < TA_PAYLOAD_DIGITS; row += 1) {
+    for (let mid = 0; mid < TA_PAYLOAD_DIGITS; mid += 1) {
+      const value = left[row][mid];
+      if (!value) continue;
+      for (let col = 0; col < TA_PAYLOAD_DIGITS; col += 1) {
+        result[row][col] = (result[row][col] + value * right[mid][col]) % 10;
+      }
+    }
+  }
+  return result;
+}
+
+function multiplyTaMatrixVector(matrix, vector) {
+  return matrix.map(row => row.reduce((sum, value, col) => (sum + value * vector[col]) % 10, 0));
+}
+
+function identityTaMatrix() {
+  return Array.from({ length: TA_PAYLOAD_DIGITS }, (_, row) =>
+    Array.from({ length: TA_PAYLOAD_DIGITS }, (_, col) => (row === col ? 1 : 0))
+  );
+}
+
+function taMatrixPower(rounds) {
+  if (taMatrixCache.has(rounds)) return taMatrixCache.get(rounds);
+  let result = identityTaMatrix();
+  let base = buildTaRoundMatrix();
+  let exponent = rounds;
+  while (exponent > 0) {
+    if (exponent & 1) result = multiplyTaMatrices(result, base);
+    base = multiplyTaMatrices(base, base);
+    exponent = Math.floor(exponent / 2);
+  }
+  taMatrixCache.set(rounds, result);
+  return result;
+}
+
+function applyTaRounds(digits, rounds) {
+  const normalized = ((rounds % TA_PERIOD) + TA_PERIOD) % TA_PERIOD;
+  if (normalized > 1000) {
+    return multiplyTaMatrixVector(taMatrixPower(normalized), digits);
+  }
+
+  let result = digits.slice();
+  for (let i = 0; i < normalized; i += 1) {
+    result = applyTaDiffRound(result);
+  }
+  return result;
+}
+
+function parseTaPositionSpec(spec) {
+  const clean = spec.trim();
+  if (!clean) return [];
+  const matches = [...clean.matchAll(/(\d+)([ta])/g)].map(match => ({
+    position: Number(match[1]),
+    letter: match[2],
+    raw: match[0]
+  }));
+  if (matches.map(item => item.raw).join("") !== clean) {
+    throw new Error("ダミー指定は 12t34a のように入力してください");
+  }
+  return matches;
+}
+
+function removeTaDummyLetters(text, spec) {
+  const result = [...text];
+  const removals = parseTaPositionSpec(spec)
+    .sort((a, b) => a.position - b.position)
+    .map((item, index) => ({
+      position: item.position + index,
+      letter: item.letter
+    }))
+    .sort((a, b) => b.position - a.position);
+
+  for (const item of removals) {
+    if (item.position < 1 || item.position > result.length) {
+      throw new Error(`削除位置が範囲外です: ${item.position}`);
+    }
+    const actual = result[item.position - 1];
+    if (actual !== item.letter) {
+      throw new Error(`${item.position}文字目は ${actual} です。指定は ${item.letter} でした`);
+    }
+    result.splice(item.position - 1, 1);
+  }
+  return result.join("");
+}
+
+function taToDigits(taText) {
+  const clean = taText.replace(/\s+/g, "");
+  if (!/^[ta]*$/.test(clean)) {
+    throw new Error("ta文字列には t と a だけを入れてください");
+  }
+
+  const bits = clean.replaceAll("t", "0").replaceAll("a", "1");
+  let cursor = "";
+  let digits = "";
+  for (const bit of bits) {
+    cursor += bit;
+    if (TA_BITS_TO_DIGIT[cursor]) {
+      digits += TA_BITS_TO_DIGIT[cursor];
+      cursor = "";
+    }
+  }
+  if (cursor) {
+    throw new Error("ハフマン符号の末尾が途中で切れています");
+  }
+  if (digits.length % TA_PAYLOAD_DIGITS !== 0) {
+    throw new Error(`数字ペイロードが50桁単位になりません: ${digits.length}桁`);
+  }
+  return digits;
+}
+
+function chunkLengthsFromKeyLength(keyLength, chunkCount) {
+  if (!Number.isInteger(keyLength) || keyLength < 1) {
+    throw new Error("元キーの文字数は1以上の整数にしてください");
+  }
+  const lengths = [];
+  let remaining = keyLength;
+  while (remaining > 0) {
+    lengths.push(Math.min(10, remaining));
+    remaining -= 10;
+  }
+  if (lengths.length !== chunkCount) {
+    throw new Error(`元キーの文字数から作ったブロック数は${lengths.length}個ですが、暗号文は${chunkCount}個です`);
+  }
+  return lengths;
+}
+
+function taDigitsToText(digits, charCount) {
+  const needed = digits.slice(0, charCount * 2);
+  let text = "";
+  for (let i = 0; i < needed.length; i += 2) {
+    const index = needed[i] * 10 + needed[i + 1];
+    if (index < 0 || index >= TA_CHARS.length) {
+      throw new Error(`文字番号が範囲外です: ${index}`);
+    }
+    text += TA_CHARS[index];
+  }
+  return text;
+}
+
+function decodeTaApiKey(encryptedTa, metaText) {
+  const meta = parseTaMeta(metaText);
+  if (!meta) {
+    throw new Error("taメモは dummy/restore_rounds/key_length の形式で入力してください");
+  }
+
+  const cleanInput = encryptedTa.replace(/\s+/g, "");
+  const withoutDummy = removeTaDummyLetters(cleanInput, meta.removeSpec);
+  const payloadDigits = taToDigits(withoutDummy);
+  const chunkCount = payloadDigits.length / TA_PAYLOAD_DIGITS;
+  const chunkLengths = chunkLengthsFromKeyLength(meta.keyLength, chunkCount);
+
+  const decodedChunks = [];
+  for (let i = 0; i < chunkCount; i += 1) {
+    const payload = payloadDigits.slice(i * TA_PAYLOAD_DIGITS, (i + 1) * TA_PAYLOAD_DIGITS);
+    const transformed = [...payload].map(digit => Number(digit));
+    const restoredDigits = applyTaRounds(transformed, meta.restoreRounds);
+    decodedChunks.push(taDigitsToText(restoredDigits, chunkLengths[i]));
+  }
+  return decodedChunks.join("");
+}
+
+async function decodeEncryptedApiKey(encryptedText, taText) {
+  const direct = encryptedText.trim();
+  if (isApiKeyFormat(direct)) return direct;
+
+  if (parseTaMeta(taText)) {
+    const decoded = decodeTaApiKey(direct, taText);
+    if (isApiKeyFormat(decoded)) return decoded;
+    throw new Error('ta文字列からAPIキーを復元できましたが、APIキー形式ではありません');
+  }
+
+  const base64Plain = tryBase64Plain(direct);
+  if (isApiKeyFormat(base64Plain)) return base64Plain;
+
+  if (!taText.trim()) throw new Error('ta文字列を入力してください');
+
+  const payload = parseEncryptedPayload(direct);
+  if (payload) {
+    try {
+      const decrypted = await decryptAesGcm(payload, taText);
+      if (isApiKeyFormat(decrypted)) return decrypted;
+    } catch(e) {
+      // Try legacy formats below before reporting the failure.
+    }
+  }
+
+  const xorDecoded = tryXorDecode(direct, taText);
+  if (isApiKeyFormat(xorDecoded)) return xorDecoded;
+
+  throw new Error('暗号化APIキーを復号できませんでした');
+}
+
+// ===== QUESTION STORAGE =====
+function loadQuestionList(key) {
+  try {
+    const saved = localStorage.getItem(key);
+    const parsed = saved ? JSON.parse(saved) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(q => normalizeQuestion(q, q.mode || 'word', q.source || 'saved')).filter(isValidQuestion);
+  } catch(e) {
+    return [];
+  }
+}
+
+function saveQuestionList(key, list) {
+  try {
+    localStorage.setItem(key, JSON.stringify(list));
+  } catch(e) {
+    alert('問題データの保存に失敗しました。ブラウザの保存容量を確認してください。');
+  }
+}
+
+function makeQuestionId(mode, q, choices, answer) {
+  const src = `${mode}|${q}|${choices.join('|')}|${answer}`;
+  let hash = 0;
+  for (let i = 0; i < src.length; i++) {
+    hash = ((hash << 5) - hash + src.charCodeAt(i)) | 0;
+  }
+  return `${mode}-${hash >>> 0}`;
+}
+
+function normalizeQuestion(raw, mode, source = 'gemini') {
+  const q = String(raw.q || '').trim();
+  const choices = Array.isArray(raw.choices) ? raw.choices.map(c => String(c).trim()).slice(0, 4) : [];
+  const answer = Number(raw.answer);
+  const itemMode = raw.mode || mode;
+  const itemLevel = LEVELS[raw.level] ? raw.level : null;
+  return {
+    id: raw.id || makeQuestionId(itemMode, q, choices, answer),
+    mode: itemMode,
+    level: itemLevel,
+    q,
+    choices,
+    answer,
+    source: raw.source || source,
+    createdAt: raw.createdAt || new Date().toISOString(),
+    generatedCount: raw.generatedCount || 1,
+    timesAnswered: raw.timesAnswered || 0,
+    timesWrong: raw.timesWrong || 0,
+    firstWrongAt: raw.firstWrongAt || null,
+    lastWrongAt: raw.lastWrongAt || null,
+    lastAnsweredAt: raw.lastAnsweredAt || null,
+    lastSelected: Number.isInteger(raw.lastSelected) ? raw.lastSelected : null
+  };
+}
+
+function isValidQuestion(q) {
+  return q.q && Array.isArray(q.choices) && q.choices.length === 4 && Number.isInteger(q.answer) && q.answer >= 0 && q.answer < 4;
+}
+
+function shuffleQuestionChoices(question) {
+  const correctText = question.choices[question.answer];
+  const shuffledChoices = question.choices.map((choice, index) => ({
+    text: choice,
+    isCorrect: index === question.answer
+  }));
+
+  for (let i = shuffledChoices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledChoices[i], shuffledChoices[j]] = [shuffledChoices[j], shuffledChoices[i]];
+  }
+
+  const answer = shuffledChoices.findIndex(choice => choice.isCorrect);
+  return {
+    ...question,
+    choices: shuffledChoices.map(choice => choice.text),
+    answer: answer >= 0 ? answer : question.choices.indexOf(correctText)
+  };
+}
+
+function mergeQuestionList(list, incoming, updateFn) {
+  const map = new Map(list.map(q => [q.id, q]));
+  incoming.forEach(q => {
+    const prev = map.get(q.id);
+    map.set(q.id, updateFn(prev, q));
+  });
+  return Array.from(map.values());
+}
+
+function saveGeneratedQuestions(newQuestions) {
+  const now = new Date().toISOString();
+  allQuestionBank = mergeQuestionList(allQuestionBank, newQuestions, (prev, q) => ({
+    ...q,
+    createdAt: prev?.createdAt || q.createdAt,
+    generatedCount: (prev?.generatedCount || 0) + 1,
+    timesAnswered: prev?.timesAnswered || 0,
+    timesWrong: prev?.timesWrong || 0,
+    firstWrongAt: prev?.firstWrongAt || null,
+    lastWrongAt: prev?.lastWrongAt || null,
+    lastAnsweredAt: prev?.lastAnsweredAt || null,
+    lastSelected: prev?.lastSelected ?? null,
+    lastGeneratedAt: now
+  }));
+  saveQuestionList(STORAGE_KEYS.all, allQuestionBank);
+  updateStats();
+}
+
+function recordQuestionAnswer(q, selected, wasWrong) {
+  const now = new Date().toISOString();
+  const saved = normalizeQuestion(q, q.mode, q.source);
+  allQuestionBank = mergeQuestionList(allQuestionBank, [saved], (prev, item) => ({
+    ...item,
+    createdAt: prev?.createdAt || item.createdAt,
+    generatedCount: prev?.generatedCount || item.generatedCount || 1,
+    timesAnswered: (prev?.timesAnswered || 0) + 1,
+    timesWrong: (prev?.timesWrong || 0) + (wasWrong ? 1 : 0),
+    firstWrongAt: prev?.firstWrongAt || (wasWrong ? now : null),
+    lastWrongAt: wasWrong ? now : (prev?.lastWrongAt || null),
+    lastAnsweredAt: now,
+    lastSelected: selected
+  }));
+  saveQuestionList(STORAGE_KEYS.all, allQuestionBank);
+
+  if (wasWrong) {
+    wrongQuestionBank = mergeQuestionList(wrongQuestionBank, [saved], (prev, item) => ({
+      ...item,
+      createdAt: prev?.createdAt || item.createdAt,
+      timesAnswered: (prev?.timesAnswered || 0) + 1,
+      timesWrong: (prev?.timesWrong || 0) + 1,
+      firstWrongAt: prev?.firstWrongAt || now,
+      lastWrongAt: now,
+      lastAnsweredAt: now,
+      lastSelected: selected
+    }));
+  } else {
+    wrongQuestionBank = wrongQuestionBank.filter(item => item.id !== saved.id);
+  }
+  saveQuestionList(STORAGE_KEYS.wrong, wrongQuestionBank);
+  updateStats();
+}
+
+function shuffleQuestions(list) {
+  const copy = list.map(q => ({ ...q, choices: [...q.choices] }));
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function normalizeTermKey(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function normalizeMeaningKey(value) {
+  return String(value || '').trim().replace(/\s+/g, '').replace(/[。．.]+$/g, '');
+}
+
+function extractMeaningParts(value) {
+  const text = String(value || '').trim();
+  if (!text) return [];
+  const parts = text.split(/[、，,／/;；]/).map(part => part.trim()).filter(Boolean);
+  return parts.length ? parts : [text];
+}
+
+function buildVocabEntries(mode) {
+  const map = new Map();
+  allQuestionBank
+    .filter(q => q.mode === mode && isValidQuestion(q) && asCount(q.timesAnswered) > 0)
+    .forEach(q => {
+      const termKey = normalizeTermKey(q.q);
+      if (!termKey) return;
+
+      if (!map.has(termKey)) {
+        map.set(termKey, {
+          term: q.q,
+          meanings: [],
+          meaningKeys: new Set(),
+          answered: 0,
+          wrong: 0,
+          lastAnsweredAt: null
+        });
+      }
+
+      const entry = map.get(termKey);
+      extractMeaningParts(q.choices[q.answer]).forEach(meaning => {
+        const meaningKey = normalizeMeaningKey(meaning);
+        if (meaningKey && !entry.meaningKeys.has(meaningKey)) {
+          entry.meaningKeys.add(meaningKey);
+          entry.meanings.push(meaning);
+        }
+      });
+      entry.answered += asCount(q.timesAnswered);
+      entry.wrong += asCount(q.timesWrong);
+      if (q.lastAnsweredAt && (!entry.lastAnsweredAt || q.lastAnsweredAt > entry.lastAnsweredAt)) {
+        entry.lastAnsweredAt = q.lastAnsweredAt;
+      }
+    });
+
+  return Array.from(map.values())
+    .map(entry => {
+      const { meaningKeys, ...rest } = entry;
+      return rest;
+    })
+    .sort((a, b) => a.term.localeCompare(b.term, 'en', { sensitivity: 'base' }));
+}
+
+function showVocabList(mode) {
+  const entries = buildVocabEntries(mode);
+  const title = mode === 'phrase' ? '熟語一覧' : '単語一覧';
+  const meaningTotal = entries.reduce((sum, entry) => sum + entry.meanings.length, 0);
+
+  document.getElementById('list-title').textContent = title;
+  document.getElementById('list-count').textContent = `${entries.length}項目 / 意味${meaningTotal}個`;
+
+  const list = document.getElementById('vocab-list');
+  const empty = document.getElementById('vocab-empty');
+  list.textContent = '';
+  empty.style.display = entries.length ? 'none' : 'block';
+  empty.textContent = mode === 'phrase' ? 'まだ回答済みの熟語がありません' : 'まだ回答済みの単語がありません';
+
+  entries.forEach(entry => {
+    const item = document.createElement('div');
+    item.className = 'vocab-item';
+
+    const main = document.createElement('div');
+    main.className = 'vocab-main';
+
+    const term = document.createElement('div');
+    term.className = 'vocab-term';
+    term.textContent = entry.term;
+
+    const meta = document.createElement('div');
+    meta.className = 'vocab-meta';
+    meta.textContent = `回答${entry.answered}回 / ミス${entry.wrong}回`;
+
+    const meanings = document.createElement('div');
+    meanings.className = 'vocab-meanings';
+    entry.meanings.forEach(meaning => {
+      const pill = document.createElement('span');
+      pill.className = 'meaning-pill';
+      pill.textContent = meaning;
+      meanings.appendChild(pill);
+    });
+
+    main.appendChild(term);
+    main.appendChild(meta);
+    item.appendChild(main);
+    item.appendChild(meanings);
+    list.appendChild(item);
+  });
+
+  show('s-vocab-list');
+}
+
+function exportQuestions(kind) {
+  const list = kind === 'wrong' ? wrongQuestionBank : allQuestionBank;
+  if (list.length === 0) {
+    alert(kind === 'wrong' ? 'まだ間違えた問題がありません。' : 'まだ保存された問題がありません。');
+    return;
+  }
+  const payload = {
+    schemaVersion: 1,
+    app: 'english-master',
+    kind,
+    exportedAt: new Date().toISOString(),
+    count: list.length,
+    questions: list.map(q => ({
+      id: q.id,
+      mode: q.mode,
+      level: q.level || null,
+      levelLabel: q.level ? getLevelLabel(q.level) : null,
+      q: q.q,
+      choices: q.choices,
+      answer: q.answer,
+      answerText: q.choices[q.answer],
+      source: q.source,
+      createdAt: q.createdAt,
+      generatedCount: q.generatedCount,
+      timesAnswered: q.timesAnswered,
+      timesWrong: q.timesWrong,
+      firstWrongAt: q.firstWrongAt,
+      lastWrongAt: q.lastWrongAt,
+      lastAnsweredAt: q.lastAnsweredAt,
+      lastSelected: q.lastSelected,
+      lastSelectedText: Number.isInteger(q.lastSelected) ? q.choices[q.lastSelected] : null
+    }))
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `english-master-${kind}-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ===== API KEY =====
+async function saveApiKey() {
+  const v = document.getElementById('api-input').value.trim();
+  const encryptedInput = document.getElementById('encrypted-api-input').value.trim();
+  const taText = document.getElementById('ta-input').value;
+  const encrypted = encryptedInput || (parseTaMeta(taText) ? DEFAULT_ENCRYPTED_TA : '');
+  const error = document.getElementById('api-error');
+  error.textContent = '';
+
+  let decodedKey = '';
+  try {
+    if (isApiKeyFormat(v)) {
+      decodedKey = v;
+    } else if (encrypted) {
+      decodedKey = await decodeEncryptedApiKey(encrypted, taText);
+      saveEncryptedApiKeyToStorage(encryptedInput);
+      saveTaMetaToStorage(taText.trim());
+    } else if (parseTaMeta(taText)) {
+      throw new Error('Encrypted ta文字列を入力してください');
+    } else {
+      throw new Error('APIキー、または暗号化APIキーを入力してください');
+    }
+  } catch(e) {
+    error.textContent = e.message || 'APIキーの復号に失敗しました';
+    return;
+  }
+
+  if (!isApiKeyFormat(decodedKey)) {
+    error.textContent = 'APIキーの形式が正しくありません';
+    return;
+  }
+
+  apiKey = decodedKey;
+  saveApiKeyToStorage(decodedKey);
+  updateStats();
+  show('s-top');
+}
+
+function changeApiKey() {
+  document.getElementById('api-error').textContent = '';
+  document.getElementById('api-input').value = '';
+  document.getElementById('encrypted-api-input').value = readSavedEncryptedApiKey();
+  document.getElementById('ta-input').value = readSavedTaMeta();
+  show('s-apikey');
+}
+
+// ===== TOP =====
+function getLevelLabel(level) {
+  return LEVELS[level]?.label || LEVELS.standard.label;
+}
+
+function setLevel(level) {
+  if (!LEVELS[level]) return;
+  currentLevel = level;
+  updateStats();
+}
+
+function updateLevelUI() {
+  document.querySelectorAll('.level-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.level === currentLevel);
+  });
+}
+
+function quizBadgeText(mode, question = null) {
+  if (mode === 'review') {
+    return question?.level ? `${modeLabel.review} / ${getLevelLabel(question.level)}` : modeLabel.review;
+  }
+  return `${modeLabel[mode]} / ${getLevelLabel(currentLevel)}`;
+}
+
+function updateStats() {
+  saveAppState();
+  updateLevelUI();
+  document.getElementById('stat-total').textContent = stats.total;
+  document.getElementById('stat-correct').textContent = stats.correct;
+  document.getElementById('stat-sets').textContent = stats.sets;
+  document.getElementById('stat-tokens').textContent = chatTokens;
+  document.getElementById('stat-saved').textContent = allQuestionBank.length;
+  document.getElementById('stat-wrong').textContent = wrongQuestionBank.length;
+  document.getElementById('word-list-btn').textContent = `単語一覧 (${buildVocabEntries('word').length})`;
+  document.getElementById('phrase-list-btn').textContent = `熟語一覧 (${buildVocabEntries('phrase').length})`;
+  document.getElementById('review-desc').textContent = `間違えた問題 ${wrongQuestionBank.length}問`;
+  document.getElementById('chat-desc').textContent = `${CHAT_UNLOCK_INTERVAL}問クリアするごとに1回話せる`;
+  document.getElementById('review-card').classList.toggle('disabled', wrongQuestionBank.length === 0);
+  document.getElementById('chat-card').style.borderColor = chatTokens > 0 ? 'var(--accent)' : 'var(--border)';
+}
+
+function goTop() { updateStats(); show('s-top'); }
+
+// ===== START QUIZ =====
+async function startMode(mode) {
+  currentMode = mode;
+  qIndex = 0;
+  score = 0;
+  questions = [];
+  answered = false;
+
+  document.getElementById('quiz-mode-badge').textContent = quizBadgeText(mode);
+  document.getElementById('loading-area').style.display = 'flex';
+  document.getElementById('loading-area').style.flexDirection = 'column';
+  document.getElementById('loading-area').style.alignItems = 'center';
+  document.getElementById('quiz-area').style.display = 'none';
+  show('s-quiz');
+
+  const ok = await fetchQuestions(mode);
+  if (!ok) return;
+  showQuestion();
+}
+
+function startWrongReview() {
+  if (wrongQuestionBank.length === 0) {
+    alert('復習する問題はまだありません。クイズで間違えた問題がここに入ります。');
+    return;
+  }
+  currentMode = 'review';
+  qIndex = 0;
+  score = 0;
+  answered = false;
+  questions = shuffleQuestions(wrongQuestionBank).slice(0, QUIZ_SIZE);
+
+  document.getElementById('quiz-mode-badge').textContent = modeLabel.review;
+  document.getElementById('loading-area').style.display = 'none';
+  document.getElementById('quiz-area').style.display = 'none';
+  show('s-quiz');
+  showQuestion();
+}
+
+// ===== GEMINI QUESTION GENERATION =====
+async function fetchQuestions(mode) {
+  const level = LEVELS[currentLevel] || LEVELS.standard;
+  const levelInstruction = `レベル: ${level.label}。${level.prompt}`;
+  const prompts = {
+    word: `${levelInstruction}
+英単語クイズを${QUIZ_SIZE}問作成してください。
+各問題は英単語1つを出題し、日本語の意味を4択で答える形式です。
+必ずJSON配列のみを返してください（説明文・マークダウン不要）。
+形式:
+[{"q":"英単語","choices":["正解の日本語","誤り1","誤り2","誤り3"],"answer":0}]
+answerは正解のchoicesのインデックス(0-3)。選択肢はランダムな順にしてください。`,
+
+    phrase: `${levelInstruction}
+英熟語・イディオムクイズを${QUIZ_SIZE}問作成してください。
+各問題は英熟語を出題し、日本語の意味を4択で答える形式です。
+必ずJSON配列のみを返してください（説明文・マークダウン不要）。
+形式:
+[{"q":"英熟語","choices":["正解の意味","誤り1","誤り2","誤り3"],"answer":0}]
+answerは正解のchoicesのインデックス(0-3)。選択肢はランダムな順にしてください。`,
+
+    grammar: `${levelInstruction}
+文法穴埋めクイズを${QUIZ_SIZE}問作成してください。
+文の一部を___（アンダースコア3つ）に置き換え、入る語句を4択で答える形式です。
+必ずJSON配列のみを返してください（説明文・マークダウン不要）。
+形式:
+[{"q":"She has been studying English ___ two hours.","choices":["for","since","during","while"],"answer":0}]
+answerは正解のchoicesのインデックス(0-3)。選択肢はランダムな順にしてください。`
+  };
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
+      },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompts[mode] }] }],
+        generationConfig: { temperature: 0.9, maxOutputTokens: 4096 }
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    let text = data.candidates[0].content.parts[0].text.trim();
+    text = text.replace(/```json|```/g, '').trim();
+    questions = JSON.parse(text);
+    if (!Array.isArray(questions) || questions.length === 0) throw new Error('問題の解析失敗');
+    questions = questions
+      .slice(0, QUIZ_SIZE)
+      .map(q => normalizeQuestion({ ...q, level: currentLevel }, mode))
+      .filter(isValidQuestion)
+      .map(shuffleQuestionChoices);
+    if (questions.length === 0) throw new Error('問題の解析失敗');
+    saveGeneratedQuestions(questions);
+    return true;
+  } catch(e) {
+    alert('問題の生成に失敗しました。\n' + e.message + '\nAPIキーを確認してください。');
+    goTop();
+    return false;
+  }
+}
+
+// ===== SHOW QUESTION =====
+function showQuestion() {
+  if (qIndex >= questions.length) { showResult(); return; }
+  answered = false;
+  const q = questions[qIndex];
+  document.getElementById('quiz-mode-badge').textContent = quizBadgeText(currentMode, q);
+  document.getElementById('q-num').textContent = `${qIndex + 1} / ${questions.length}`;
+  document.getElementById('q-progress').style.width = `${((qIndex + 1) / questions.length) * 100}%`;
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('next-btn').style.display = 'none';
+
+  const qText = document.getElementById('q-text');
+  qText.textContent = '';
+  const questionBody = document.createElement('div');
+  if (q.mode === 'grammar') {
+    questionBody.className = 'question-sentence';
+    const parts = q.q.split('___');
+    parts.forEach((part, i) => {
+      questionBody.appendChild(document.createTextNode(part));
+      if (i < parts.length - 1) {
+        const blank = document.createElement('span');
+        blank.className = 'blank';
+        blank.textContent = '　　　';
+        questionBody.appendChild(blank);
+      }
+    });
+  } else {
+    questionBody.className = 'question-word';
+    questionBody.textContent = q.q;
+  }
+  qText.appendChild(questionBody);
+
+  const choicesDiv = document.getElementById('choices');
+  choicesDiv.innerHTML = '';
+  q.choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = c;
+    btn.onclick = () => selectAnswer(i, q.answer);
+    choicesDiv.appendChild(btn);
+  });
+
+  document.getElementById('loading-area').style.display = 'none';
+  const qa = document.getElementById('quiz-area');
+  qa.style.display = 'flex';
+  qa.style.flexDirection = 'column';
+  qa.style.alignItems = 'center';
+}
+
+// ===== SELECT ANSWER =====
+function selectAnswer(idx, correct) {
+  if (answered) return;
+  answered = true;
+  const q = questions[qIndex];
+  const btns = document.querySelectorAll('.choice-btn');
+  btns.forEach(b => b.disabled = true);
+  btns[correct].classList.add('correct');
+  const fb = document.getElementById('feedback');
+  if (idx === correct) {
+    score++;
+    stats.correct++;
+    recordQuestionAnswer(q, idx, false);
+    fb.textContent = '✅ 正解！';
+    fb.className = 'feedback ok';
+  } else {
+    btns[idx].classList.add('wrong');
+    fb.textContent = `❌ 不正解… 正解は「${questions[qIndex].choices[correct]}」`;
+    fb.className = 'feedback ng';
+    recordQuestionAnswer(q, idx, true);
+  }
+  stats.total++;
+  updateStats();
+  document.getElementById('next-btn').style.display = 'inline-block';
+}
+
+function nextQuestion() { qIndex++; showQuestion(); }
+
+function retryMode() {
+  if (currentMode === 'review') {
+    startWrongReview();
+  } else {
+    startMode(currentMode);
+  }
+}
+
+// ===== RESULT =====
+function showResult() {
+  stats.sets++;
+  const unlockedChats = Math.floor(questions.length / CHAT_UNLOCK_INTERVAL);
+  const grantsChat = unlockedChats > 0;
+  if (grantsChat) chatTokens += unlockedChats;
+  const pct = score / questions.length;
+  const emoji = pct >= 0.9 ? '🏆' : pct >= 0.7 ? '🎉' : pct >= 0.5 ? '😊' : '💪';
+  const msgs = {
+    '🏆': 'すごい！ほぼ満点！君は天才だ！',
+    '🎉': 'よくできました！この調子で頑張ろう！',
+    '😊': 'いい感じ！もう少しで完璧だよ！',
+    '💪': '諦めないで！繰り返しが大切だよ！'
+  };
+  document.getElementById('res-emoji').textContent = emoji;
+  document.getElementById('res-title').textContent = `${modeLabel[currentMode]}完了！`;
+  document.getElementById('res-score').textContent = score;
+  document.getElementById('res-total').textContent = questions.length;
+  document.getElementById('res-msg').textContent = msgs[emoji];
+
+  const chatBtn = document.getElementById('chat-btn');
+  const chatLockedMsg = document.getElementById('chat-locked-msg');
+  chatBtn.style.display = chatTokens > 0 ? 'block' : 'none';
+  chatLockedMsg.textContent = grantsChat ? `💬 ${unlockedChats}回解放！ チャット残り回数: ${chatTokens}回` : `💬 ${CHAT_UNLOCK_INTERVAL}問セットでチャットが1回解放されます`;
+
+  updateStats();
+  show('s-result');
+}
+
+// ===== CHAT =====
+function goChat() {
+  updateChatUI();
+  show('s-chat');
+  renderChatHistory();
+}
+
+function normalizeChatEmotion(value) {
+  const zones = ['喜', '怒', '哀', '楽'];
+  return {
+    self: zones.includes(value?.self) ? value.self : '楽',
+    user: zones.includes(value?.user) ? value.user : '楽',
+    closeness: Math.max(0, Math.min(10, asCount(value?.closeness)))
+  };
+}
+
+function detectUserEmotion(text) {
+  const lower = text.toLowerCase();
+  const checks = [
+    ['哀', /つら|無理|しんど|疲れ|こわ|不安|泣|できない|わからない|むず|難し|やばい|落ち込|sad|tired|help/],
+    ['怒', /むかつ|うざ|嫌|最悪|腹立|だる|怒|イライラ|annoy|angry/],
+    ['喜', /できた|正解|うれし|嬉し|最高|楽しい|ありがと|助か|わかった|すご|やった|good|great|thanks/]
+  ];
+  const found = checks.find(([, pattern]) => pattern.test(lower));
+  return found ? found[0] : '楽';
+}
+
+function updateRynaEmotion(userText) {
+  const userZone = detectUserEmotion(userText);
+  const nextByUser = {
+    '喜': ['喜', '喜', '楽'],
+    '怒': ['怒', '哀', '楽'],
+    '哀': ['哀', '楽', '哀'],
+    '楽': ['楽', '喜', '楽']
+  };
+  const options = nextByUser[userZone] || nextByUser['楽'];
+  chatEmotion = {
+    self: options[Math.floor(Math.random() * options.length)],
+    user: userZone,
+    closeness: Math.min(10, asCount(chatEmotion.closeness) + 1)
+  };
+}
+
+function buildRynaSystemPrompt(userText) {
+  updateRynaEmotion(userText);
+  return `あなたは高校生の英語学習を支えるAI相棒「らいな」です。
+らいなは感情が声に出る、距離が近い、少し拗ねたり一緒にはしゃいだりするキャラです。
+ただし生徒を傷つける言い方、依存を煽る言い方、危険な助言は禁止です。重さは「勉強を一緒に頑張りたい近さ」として出してください。
+
+現在のらいなの気分: ${chatEmotion.self}
+らいなが推定した相手の気分: ${chatEmotion.user}
+親密度: ${chatEmotion.closeness}/10
+学習レベル: ${getLevelLabel(currentLevel)}
+保存された間違い問題数: ${wrongQuestionBank.length}
+
+口調ルール:
+- 名前は必要な時だけ「らいな」と名乗る
+- 日本語中心。英語の質問なら短い英語例を入れる
+- まず質問に答えてから、らいなっぽい感情を一言添える
+- 返答は基本160文字以内。文法説明が必要な時だけ少し長くしてよい
+- 喜: 一緒にはしゃぐ / 怒: 勉強の敵に軽く拗ねる / 哀: 深く寄り添う / 楽: 静かに近くいる`;
+}
+
+function renderChatHistory() {
+  const messages = document.getElementById('chat-messages');
+  if (messages.children.length > 0) return;
+  if (chatHistory.length === 0) {
+    addMsg('ai', 'らいなだよ。英語、ひとりで抱えなくていいからね。わからない所、いっしょにほどこう。');
+    return;
+  }
+  chatHistory.forEach(h => {
+    const text = h.parts?.[0]?.text || '';
+    if (text) addMsg(h.role === 'user' ? 'user' : 'ai', text);
+  });
+}
+
+function updateChatUI() {
+  saveAppState();
+  document.getElementById('chat-badge').textContent = `残り${chatTokens}回 / らいな:${chatEmotion.self}`;
+  document.getElementById('tokens-left').textContent = chatTokens > 0 ? `あと${chatTokens}回送信できます` : `${CHAT_UNLOCK_INTERVAL}問クリアするとチャットが1回解放されます`;
+  const input = document.getElementById('chat-input');
+  const btn = document.getElementById('send-btn');
+  input.disabled = chatTokens <= 0;
+  btn.disabled = chatTokens <= 0;
+}
+
+function addMsg(role, text) {
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.textContent = text;
+  document.getElementById('chat-messages').appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth' });
+  return div;
+}
+
+async function sendChat() {
+  if (chatTokens <= 0) return;
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  chatTokens--;
+  addMsg('user', text);
+  chatHistory.push({ role: 'user', parts: [{ text }] });
+  updateChatUI();
+
+  document.getElementById('send-btn').disabled = true;
+  input.disabled = true;
+  const typing = addMsg('ai', '…');
+
+  const systemPrompt = buildRynaSystemPrompt(text);
+  saveAppState();
+
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
+      },
+      body: JSON.stringify({
+        contents: chatHistory.map(h => ({ role: h.role === 'user' ? 'user' : 'model', parts: h.parts })),
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        generationConfig: { temperature: 1.0, maxOutputTokens: 256 }
+      })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const reply = data.candidates[0].content.parts[0].text.trim();
+    typing.textContent = reply;
+    chatHistory.push({ role: 'model', parts: [{ text: reply }] });
+  } catch(e) {
+    typing.textContent = 'エラーが発生しました…もう一度試してね。';
+    chatTokens++; // refund
+    updateChatUI();
+  }
+
+  if (chatTokens > 0) {
+    input.disabled = false;
+    document.getElementById('send-btn').disabled = false;
+    input.focus();
+  }
+  updateChatUI();
+}
+
+function initializeApp() {
+  loadAppState();
+  apiKey = readSavedApiKey();
+  document.getElementById('encrypted-api-input').value = readSavedEncryptedApiKey();
+  document.getElementById('ta-input').value = readSavedTaMeta();
+  document.getElementById('api-input').value = '';
+  updateStats();
+}
+
+initializeApp();
+</script>
+</body>
+</html>
